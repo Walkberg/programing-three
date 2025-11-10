@@ -1,0 +1,476 @@
+{
+  "title": "Scene Editor Internal API Contracts",
+  "version": "1.0.0",
+  "description": "Internal API contracts for Scene Editor MVP - defines interfaces between stores, services, and components",
+  "note": "This is not a REST API. These are TypeScript interfaces for internal module communication.",
+  
+  "interfaces": {
+    "SceneStore": {
+      "description": "Zustand store managing scene hierarchy and GameObjects",
+      "state": {
+        "gameObjects": {
+          "type": "GameObject[]",
+          "description": "Flat array of all GameObjects in scene"
+        },
+        "gameObjectMap": {
+          "type": "Map<string, GameObject>",
+          "description": "ID lookup cache for O(1) access"
+        }
+      },
+      "actions": {
+        "addGameObject": {
+          "signature": "(name?: string) => string",
+          "description": "Creates new GameObject with auto-incremented name, returns ID",
+          "sideEffects": [
+            "Generates UUID",
+            "Adds default Transform component",
+            "Inserts into gameObjects array",
+            "Updates gameObjectMap cache"
+          ],
+          "returns": "UUID of created GameObject"
+        },
+        "removeGameObject": {
+          "signature": "(id: string) => void",
+          "description": "Deletes GameObject and all children recursively",
+          "sideEffects": [
+            "Removes from gameObjects array",
+            "Removes children recursively",
+            "Updates gameObjectMap cache",
+            "Clears selection if deleted object was selected"
+          ],
+          "throws": "Error if ID not found"
+        },
+        "updateTransform": {
+          "signature": "(id: string, partial: Partial<TransformData>) => void",
+          "description": "Updates Transform component properties",
+          "validation": [
+            "ID must exist",
+            "GameObject must have Transform component",
+            "Numeric values must be finite",
+            "Scale values must be positive"
+          ],
+          "sideEffects": ["Triggers React re-render", "Scene viewport updates"]
+        },
+        "addComponent": {
+          "signature": "(gameObjectId: string, component: Component) => void",
+          "description": "Attaches component to GameObject",
+          "validation": ["GameObject must exist", "Component must be valid type"],
+          "sideEffects": [
+            "Pushes to GameObject.components array",
+            "Shows warning if duplicate type (clarification Q2)"
+          ]
+        },
+        "updateComponent": {
+          "signature": "(gameObjectId: string, componentId: string, data: Record<string, unknown>) => void",
+          "description": "Updates arbitrary component properties",
+          "validation": ["Component must exist", "Data must match component schema"],
+          "sideEffects": ["Triggers React re-render"]
+        },
+        "getGameObject": {
+          "signature": "(id: string) => GameObject | undefined",
+          "description": "Retrieves GameObject by ID",
+          "performance": "O(1) via gameObjectMap"
+        },
+        "getRootGameObjects": {
+          "signature": "() => GameObject[]",
+          "description": "Returns GameObjects with parent === null",
+          "memoization": "Cached, recomputed on hierarchy change"
+        },
+        "replaceScene": {
+          "signature": "(scene: SceneData) => void",
+          "description": "Replaces entire scene (used for load and play mode revert)",
+          "sideEffects": [
+            "Clears current gameObjects",
+            "Deserializes new scene",
+            "Rebuilds gameObjectMap",
+            "Clears selection"
+          ]
+        }
+      }
+    },
+    
+    "EditorStore": {
+      "description": "Zustand store managing editor UI state",
+      "state": {
+        "mode": {
+          "type": "'edit' | 'play'",
+          "description": "Current editor mode",
+          "default": "'edit'"
+        },
+        "selectedId": {
+          "type": "string | null",
+          "description": "ID of currently selected GameObject",
+          "default": "null"
+        },
+        "playStateSnapshot": {
+          "type": "SceneData | null",
+          "description": "Scene snapshot taken on entering play mode",
+          "default": "null"
+        }
+      },
+      "actions": {
+        "setMode": {
+          "signature": "(mode: 'edit' | 'play') => void",
+          "description": "Switches editor mode",
+          "sideEffects": {
+            "on_play": [
+              "Takes scene snapshot via SceneSerializer.serialize()",
+              "Stores in playStateSnapshot",
+              "Starts component update loops",
+              "Disables Inspector editing"
+            ],
+            "on_stop": [
+              "Restores scene from playStateSnapshot",
+              "Calls sceneStore.replaceScene(snapshot)",
+              "Stops component update loops",
+              "Enables Inspector editing",
+              "Clears playStateSnapshot"
+            ]
+          },
+          "validation": ["Transition time must be <500ms per FR-025"]
+        },
+        "selectGameObject": {
+          "signature": "(id: string | null) => void",
+          "description": "Updates selected GameObject",
+          "validation": ["ID must exist in scene if not null"],
+          "sideEffects": [
+            "Updates selectedId",
+            "Inspector shows selected GameObject properties",
+            "Viewport highlights selected object"
+          ]
+        },
+        "clearSelection": {
+          "signature": "() => void",
+          "description": "Deselects all GameObjects",
+          "sideEffects": ["Sets selectedId to null", "Inspector shows empty state"]
+        }
+      }
+    },
+    
+    "SceneSerializer": {
+      "description": "Service for scene JSON serialization/deserialization",
+      "methods": {
+        "serialize": {
+          "signature": "(scene: Scene) => string",
+          "description": "Converts scene to JSON string",
+          "algorithm": [
+            "Create base structure with version field",
+            "Iterate gameObjects array",
+            "For each GameObject, iterate components",
+            "Call component.serialize() for each",
+            "Add metadata (created, modified timestamps)",
+            "Stringify with JSON.stringify()"
+          ],
+          "performance": "Target <100ms for 50 GameObjects",
+          "returns": "JSON string"
+        },
+        "deserialize": {
+          "signature": "(json: string) => Scene",
+          "description": "Reconstructs scene from JSON",
+          "algorithm": [
+            "Parse JSON string",
+            "Validate with sceneSchema (Zod)",
+            "Check version field for migrations",
+            "Create GameObject instances",
+            "Instantiate components by type discriminator",
+            "Rebuild hierarchy (parent-child refs)",
+            "Reconstruct gameObjectMap cache"
+          ],
+          "validation": [
+            "JSON must be valid",
+            "Version must be compatible",
+            "All GameObject IDs unique",
+            "All parent refs valid"
+          ],
+          "errorHandling": {
+            "invalid_json": "Throw SerializationError",
+            "version_mismatch": "Attempt migration or throw",
+            "invalid_component_type": "Skip component, log warning",
+            "circular_reference": "Break cycle, log error"
+          },
+          "returns": "Scene object"
+        }
+      }
+    },
+    
+    "StorageService": {
+      "description": "Service for localStorage persistence",
+      "methods": {
+        "save": {
+          "signature": "(key: string, data: string) => Promise<void>",
+          "description": "Saves JSON string to localStorage",
+          "validation": [
+            "Check available quota",
+            "Warn if >80% capacity",
+            "Throw if quota exceeded"
+          ],
+          "sideEffects": [
+            "Calls localStorage.setItem()",
+            "Shows success toast (FR-031)"
+          ],
+          "errors": {
+            "QuotaExceededError": "localStorage full, prompt user to delete scenes"
+          }
+        },
+        "load": {
+          "signature": "(key: string) => Promise<string | null>",
+          "description": "Loads JSON string from localStorage",
+          "returns": "JSON string or null if key not found",
+          "sideEffects": ["Shows success toast (FR-031)"]
+        },
+        "exists": {
+          "signature": "(key: string) => boolean",
+          "description": "Checks if key exists in localStorage"
+        },
+        "remove": {
+          "signature": "(key: string) => void",
+          "description": "Deletes key from localStorage"
+        },
+        "getQuotaUsage": {
+          "signature": "() => { used: number, total: number }",
+          "description": "Estimates localStorage usage",
+          "algorithm": [
+            "Iterate all localStorage keys",
+            "Sum byte sizes",
+            "Estimate total quota (typically 5-10MB)"
+          ]
+        }
+      }
+    },
+    
+    "ValidationService": {
+      "description": "Service for input validation with Zod schemas",
+      "methods": {
+        "validateTransform": {
+          "signature": "(data: unknown) => TransformData",
+          "description": "Validates Transform component data",
+          "schema": "transformSchema (see data-model.md)",
+          "returns": "Validated TransformData or throws ZodError"
+        },
+        "validateMeshRenderer": {
+          "signature": "(data: unknown) => MeshRendererData",
+          "description": "Validates MeshRenderer component data",
+          "schema": "meshRendererSchema (see data-model.md)",
+          "returns": "Validated MeshRendererData or throws ZodError"
+        },
+        "validateScene": {
+          "signature": "(data: unknown) => SceneData",
+          "description": "Validates entire scene structure",
+          "schema": "sceneSchema (see data-model.md)",
+          "returns": "Validated SceneData or throws ZodError"
+        },
+        "getErrorMessage": {
+          "signature": "(error: ZodError, field: string) => string",
+          "description": "Extracts user-friendly error message for specific field",
+          "examples": {
+            "scale.x: -1": "Scale must be greater than 0",
+            "position.x: NaN": "Position must be a valid number",
+            "color: 'red'": "Color must be in #RRGGBB format"
+          }
+        }
+      }
+    },
+    
+    "ComponentRegistry": {
+      "description": "Registry for component types and factory functions",
+      "state": {
+        "componentTypes": {
+          "type": "Map<string, ComponentConstructor>",
+          "description": "Maps type strings to component classes"
+        }
+      },
+      "methods": {
+        "register": {
+          "signature": "(type: string, constructor: ComponentConstructor) => void",
+          "description": "Registers component type for deserialization",
+          "example": "register('Transform', Transform)"
+        },
+        "create": {
+          "signature": "(type: string, data: Record<string, unknown>) => Component",
+          "description": "Creates component instance by type discriminator",
+          "throws": "Error if type not registered"
+        },
+        "getAvailableTypes": {
+          "signature": "() => string[]",
+          "description": "Returns list of registered component types for 'Add Component' dropdown"
+        }
+      }
+    }
+  },
+  
+  "dataFlows": {
+    "createGameObject": {
+      "trigger": "User clicks 'Add GameObject' button",
+      "steps": [
+        "UI: Button onClick handler",
+        "Store: sceneStore.addGameObject()",
+        "Store: Generate UUID + name",
+        "Store: Create Transform component",
+        "Store: Add to gameObjects array",
+        "Store: Update gameObjectMap",
+        "Store: Trigger subscribers",
+        "UI: HierarchyPanel re-renders",
+        "UI: Viewport re-renders",
+        "Engine: R3F renders new mesh"
+      ],
+      "performance": "< 16ms total (one frame)"
+    },
+    
+    "updateProperty": {
+      "trigger": "User edits Transform.position.x in Inspector",
+      "steps": [
+        "UI: Input onChange",
+        "UI: React Hook Form validates (Zod)",
+        "UI: If valid, call sceneStore.updateTransform()",
+        "Store: Update component data",
+        "Store: Trigger subscribers",
+        "UI: Inspector re-renders (optimistic)",
+        "UI: Viewport re-renders",
+        "Engine: R3F updates mesh position",
+        "Engine: Three.js renders frame"
+      ],
+      "performance": "< 16ms per FR-013",
+      "errorHandling": "If invalid, show red border, block store update"
+    },
+    
+    "saveScene": {
+      "trigger": "User clicks 'Save Scene' button",
+      "steps": [
+        "UI: Button onClick",
+        "Service: SceneSerializer.serialize(scene)",
+        "Service: Iterate GameObjects and components",
+        "Service: Generate JSON string",
+        "Service: StorageService.save('scene:current', json)",
+        "Service: localStorage.setItem()",
+        "UI: Show success toast (FR-031)"
+      ],
+      "performance": "< 1 second per constitution"
+    },
+    
+    "loadScene": {
+      "trigger": "User clicks 'Load Scene' button",
+      "steps": [
+        "UI: Button onClick",
+        "Service: StorageService.load('scene:current')",
+        "Service: localStorage.getItem()",
+        "Service: SceneSerializer.deserialize(json)",
+        "Service: Validate with Zod",
+        "Service: Reconstruct GameObjects",
+        "Store: sceneStore.replaceScene(scene)",
+        "Store: Clear selection",
+        "Store: Trigger subscribers",
+        "UI: All panels re-render",
+        "UI: Show success toast (FR-031)"
+      ],
+      "performance": "< 1 second per constitution"
+    },
+    
+    "enterPlayMode": {
+      "trigger": "User clicks 'Play' button",
+      "steps": [
+        "UI: Button onClick",
+        "Store: editorStore.setMode('play')",
+        "Store: Snapshot scene via serialize()",
+        "Store: Store in playStateSnapshot",
+        "Engine: Start update loop",
+        "Engine: Each frame, call component.update(dt) for all components",
+        "UI: Show 'Playing' indicator (FR-025)",
+        "UI: Disable Inspector inputs (FR-027)"
+      ],
+      "performance": "< 500ms transition per FR-025"
+    },
+    
+    "exitPlayMode": {
+      "trigger": "User clicks 'Stop' button",
+      "steps": [
+        "UI: Button onClick",
+        "Store: editorStore.setMode('edit')",
+        "Engine: Stop update loop",
+        "Store: Load playStateSnapshot",
+        "Store: sceneStore.replaceScene(snapshot)",
+        "Store: Clear playStateSnapshot",
+        "UI: Show 'Edit' indicator",
+        "UI: Enable Inspector inputs"
+      ],
+      "performance": "< 500ms transition per FR-025"
+    }
+  },
+  
+  "errorHandling": {
+    "patterns": {
+      "validation_errors": {
+        "trigger": "Zod validation fails on user input",
+        "response": [
+          "Show red border on input field (FR-015)",
+          "Display error message below input",
+          "Block store update (prevent invalid state)",
+          "Keep previous valid value"
+        ]
+      },
+      "storage_quota_exceeded": {
+        "trigger": "localStorage.setItem() throws QuotaExceededError",
+        "response": [
+          "Show error toast: 'Storage full. Delete unused scenes.'",
+          "Log error to console",
+          "Scene save fails, user must free space"
+        ]
+      },
+      "deserialization_failure": {
+        "trigger": "Invalid JSON or schema validation fails",
+        "response": [
+          "Show error toast: 'Scene corrupted. Cannot load.'",
+          "Log detailed error to console",
+          "Keep current scene (don't replace with broken one)",
+          "Offer user option to reset to empty scene"
+        ]
+      },
+      "component_update_error": {
+        "trigger": "component.update() throws in play mode",
+        "response": [
+          "Catch error, log to console",
+          "Show error toast: 'Component error in play mode'",
+          "Continue updating other components (isolate failure)",
+          "Highlight broken component in Inspector (future)"
+        ]
+      }
+    }
+  },
+  
+  "performanceContracts": {
+    "renderLoop": {
+      "target": "60 FPS (16.67ms per frame)",
+      "budget": {
+        "React reconciliation": "< 5ms",
+        "Three.js rendering": "< 10ms",
+        "Component updates": "< 1ms",
+        "Buffer": "0.67ms"
+      },
+      "monitoring": "Use React DevTools Profiler + Chrome Performance tab"
+    },
+    "propertyUpdate": {
+      "target": "< 16ms (FR-013)",
+      "includes": [
+        "Input validation",
+        "Store update",
+        "React re-render",
+        "Three.js scene update"
+      ]
+    },
+    "modeTransition": {
+      "target": "< 500ms (FR-025)",
+      "includes": [
+        "Scene serialization (play) or deserialization (stop)",
+        "Store updates",
+        "Full UI re-render"
+      ]
+    },
+    "sceneSave": {
+      "target": "< 1 second (constitution)",
+      "includes": [
+        "Serialization",
+        "JSON stringify",
+        "localStorage write"
+      ]
+    }
+  }
+}
