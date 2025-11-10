@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useEditorStore } from "@/state/editorStore";
 import { useSceneStore } from "@/state/sceneStore";
 import type { GameObjectData } from "@/types";
@@ -11,7 +11,11 @@ interface GameObjectItemProps {
   depth?: number;
 }
 
-export function GameObjectItem({
+/**
+ * GameObjectItem with React.memo optimization (T080)
+ * Only re-renders when gameObject, isSelected, or depth changes
+ */
+export const GameObjectItem = memo(function GameObjectItem({
   gameObject,
   isSelected,
   depth = 0,
@@ -106,4 +110,4 @@ export function GameObjectItem({
       )}
     </div>
   );
-}
+});

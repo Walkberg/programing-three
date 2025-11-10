@@ -1,3 +1,4 @@
+import { memo, useState } from "react";
 import { useEditorStore } from "@/state/editorStore";
 import { useSceneStore } from "@/state/sceneStore";
 import { TransformEditor } from "./TransformEditor";
@@ -13,11 +14,14 @@ import {
 import { ComponentRegistry } from "@/core/Component";
 import { MeshRenderer } from "@/core/MeshRenderer";
 import { RotationComponent } from "@/core/RotationComponent";
-import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export function InspectorPanel() {
+/**
+ * InspectorPanel with React.memo optimization (T080)
+ * Only re-renders when selected GameObject changes
+ */
+export const InspectorPanel = memo(function InspectorPanel() {
   const selectedId = useEditorStore((state) => state.selectedId);
   const gameObjects = useSceneStore((state) => state.gameObjects);
   const addComponent = useSceneStore((state) => state.addComponent);
@@ -174,4 +178,4 @@ export function InspectorPanel() {
       />
     </div>
   );
-}
+});

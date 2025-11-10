@@ -1,8 +1,13 @@
+import { memo } from "react";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import { GameObjectItem } from "./GameObjectItem";
 
-export function HierarchyPanel() {
+/**
+ * HierarchyPanel with React.memo optimization (T080)
+ * Only re-renders when gameObjects or selectedId change
+ */
+export const HierarchyPanel = memo(function HierarchyPanel() {
   const gameObjects = useSceneStore((state) => state.gameObjects);
   const selectedId = useEditorStore((state) => state.selectedId);
 
@@ -30,4 +35,4 @@ export function HierarchyPanel() {
       ))}
     </div>
   );
-}
+});

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { GameObject } from "@/core/GameObject";
 import { Component } from "@/core/Component";
 import type { GameObjectData, Vector3, ComponentData } from "@/types";
+import { useEditorStore } from "./editorStore";
 
 interface SceneStore {
   gameObjects: GameObjectData[];
@@ -27,6 +28,11 @@ interface SceneStore {
   clear: () => void;
 }
 
+// Helper to mark scene as dirty (T083)
+const markDirty = () => {
+  useEditorStore.getState().setIsDirty(true);
+};
+
 export const useSceneStore = create<SceneStore>((set, get) => ({
   gameObjects: [],
   gameObjectMap: new Map(),
@@ -45,6 +51,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       };
     });
 
+    markDirty(); // T083
     return data.id;
   },
 
@@ -61,6 +68,8 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
         gameObjectMap: newMap,
       };
     });
+
+    markDirty(); // T083
   },
 
   updateGameObject: (id, updates) => {
@@ -76,6 +85,8 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
         gameObjectMap: newMap,
       };
     });
+
+    markDirty(); // T083
   },
 
   updateTransform: (gameObjectId, position, rotation, scale) => {
@@ -160,6 +171,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       gameObjects,
       gameObjectMap: newMap,
     });
+    // Don't mark dirty when loading a scene
   },
 
   clear: () => {
@@ -168,5 +180,7 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       gameObjects: [],
       gameObjectMap: new Map(),
     });
+
+    markDirty(); // T083
   },
 }));
