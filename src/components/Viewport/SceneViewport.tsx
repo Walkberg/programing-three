@@ -1,10 +1,66 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import { PerformanceMonitor } from "./PerformanceMonitor";
-import { useState, memo } from "react";
+import { useState, memo, useRef, createContext, useContext } from "react";
 import * as THREE from "three";
+
+// Context to share play mode runtime state without modifying store
+interface PlayModeState {
+  rotationOffsets: Map<string, number>;
+}
+
+const PlayModeContext = createContext<PlayModeState>({
+  rotationOffsets: new Map(),
+});
+
+// Component Update Loop for Play Mode
+function UpdateLoop() {
+  const gameObjects = useSceneStore((state) => state.gameObjects);
+  const mode = useEditorStore((state) => state.mode);
+  const lastTimeRef = useRef<number>(0);
+  const playModeState = useContext(PlayModeContext);
+
+  useFrame((state) => {
+    // Only run update loop in play mode
+    if (mode !== "play") {
+      lastTimeRef.current = state.clock.getElapsedTime();
+      return;
+    }
+
+    // Calculate delta time
+    const currentTime = state.clock.getElapsedTime();
+    const deltaTime = currentTime - lastTimeRef.current;
+    lastTimeRef.current = currentTime;
+
+    // Call update() on all enabled components and accumulate runtime state
+    gameObjects.forEach((gameObject) => {
+      gameObject.components.forEach((component: any) => {
+        if (component.enabled && typeof component.update === "function") {
+          component.update(deltaTime);
+        }
+
+        // Example: Handle RotationComponent updates
+        // Accumulate rotation in playModeState instead of modifying store
+        if (
+          component.enabled &&
+          component.type === "RotationComponent" &&
+          deltaTime > 0
+        ) {
+          const currentOffset =
+            playModeState.rotationOffsets.get(gameObject.id) || 0;
+          playModeState.rotationOffsets.set(
+            gameObject.id,
+            currentOffset + component.speed * deltaTime
+          );
+        }
+      });
+    });
+  });
+
+  return null;
+}
 
 // Memoized GameObject renderer for performance (FR-013: 16ms updates)
 const GameObjectRenderer = memo(function GameObjectRenderer() {
@@ -29,13 +85,13 @@ interface GameObjectMeshProps {
   isSelected: boolean;
 }
 
-// Memoized individual GameObject mesh to prevent unnecessary re-renders
-const GameObjectMesh = memo(function GameObjectMesh({
-  gameObject,
-  isSelected,
-}: GameObjectMeshProps) {
+// Individual GameObject mesh with play mode animation support
+function GameObjectMesh({ gameObject, isSelected }: GameObjectMeshProps) {
   const selectGameObject = useEditorStore((state) => state.selectGameObject);
   const mode = useEditorStore((state) => state.mode);
+  const playModeState = useContext(PlayModeContext);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const highlightRef = useRef<THREE.Mesh>(null);
 
   const transform = gameObject.components.find(
     (c: any) => c.type === "Transform"
@@ -43,6 +99,29 @@ const GameObjectMesh = memo(function GameObjectMesh({
   const meshRenderer = gameObject.components.find(
     (c: any) => c.type === "MeshRenderer"
   ) as any;
+  const rotationComponent = gameObject.components.find(
+    (c: any) => c.type === "RotationComponent"
+  ) as any;
+
+  // Update mesh rotation every frame in play mode
+  useFrame(() => {
+    if (mode === "play" && rotationComponent && meshRef.current) {
+      const rotationOffset =
+        playModeState.rotationOffsets.get(gameObject.id) || 0;
+
+      meshRef.current.rotation.set(
+        transform.rotation.x,
+        transform.rotation.y + rotationOffset,
+        transform.rotation.z,
+        transform.rotation.order || "XYZ"
+      );
+
+      // Also update highlight if selected
+      if (highlightRef.current) {
+        highlightRef.current.rotation.copy(meshRef.current.rotation);
+      }
+    }
+  });
 
   if (!transform || !meshRenderer || !meshRenderer.visible) {
     return null;
@@ -90,6 +169,7 @@ const GameObjectMesh = memo(function GameObjectMesh({
   return (
     <group>
       <mesh
+        ref={meshRef}
         position={position}
         rotation={rotation}
         scale={scale}
@@ -99,7 +179,12 @@ const GameObjectMesh = memo(function GameObjectMesh({
         <meshStandardMaterial color={meshRenderer.color} />
       </mesh>
       {isSelected && (
-        <mesh position={position} rotation={rotation} scale={scale}>
+        <mesh
+          ref={highlightRef}
+          position={position}
+          rotation={rotation}
+          scale={scale}
+        >
           {geometry}
           <meshBasicMaterial
             color="#ffff00"
@@ -111,52 +196,68 @@ const GameObjectMesh = memo(function GameObjectMesh({
       )}
     </group>
   );
-});
+}
 
 export function SceneViewport() {
   const [fps, setFps] = useState(60);
+  const mode = useEditorStore((state) => state.mode);
+
+  // Create play mode state that persists across renders but clears on mode change
+  const playModeStateRef = useRef<PlayModeState>({
+    rotationOffsets: new Map(),
+  });
+
+  // Clear play mode state when exiting play mode
+  if (mode === "edit") {
+    playModeStateRef.current.rotationOffsets.clear();
+  }
 
   return (
     <div className="w-full h-full relative">
-      <Canvas
-        camera={{ position: [5, 5, 5], fov: 50 }}
-        gl={{ antialias: true }}
-        shadows
-      >
-        {/* Lighting */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+      <PlayModeContext.Provider value={playModeStateRef.current}>
+        <Canvas
+          camera={{ position: [5, 5, 5], fov: 50 }}
+          gl={{ antialias: true }}
+          shadows
+        >
+          {/* Lighting */}
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
 
-        {/* Grid helper */}
-        <Grid
-          args={[20, 20]}
-          cellSize={1}
-          cellThickness={0.5}
-          cellColor="#6e6e6e"
-          sectionSize={5}
-          sectionThickness={1}
-          sectionColor="#9d4b4b"
-          fadeDistance={30}
-          fadeStrength={1}
-          followCamera={false}
-          infiniteGrid
-        />
+          {/* Grid helper */}
+          <Grid
+            args={[20, 20]}
+            cellSize={1}
+            cellThickness={0.5}
+            cellColor="#6e6e6e"
+            sectionSize={5}
+            sectionThickness={1}
+            sectionColor="#9d4b4b"
+            fadeDistance={30}
+            fadeStrength={1}
+            followCamera={false}
+            infiniteGrid
+          />
 
-        {/* Camera controls */}
-        <OrbitControls
-          makeDefault
-          enableDamping
-          dampingFactor={0.05}
-          minDistance={1}
-          maxDistance={50}
-        />
+          {/* Camera controls */}
+          <OrbitControls
+            makeDefault
+            enableDamping
+            dampingFactor={0.05}
+            minDistance={1}
+            maxDistance={50}
+          />
 
-        {/* Render GameObjects */}
-        <GameObjectRenderer />
+          {/* Render GameObjects */}
+          <GameObjectRenderer />
 
-        {/* Performance monitoring */}
-        <PerformanceMonitor onFpsUpdate={setFps} />
-      </Canvas>
+          {/* Component update loop for play mode */}
+          <UpdateLoop />
+
+          {/* Performance monitoring */}
+          <PerformanceMonitor onFpsUpdate={setFps} />
+        </Canvas>
+      </PlayModeContext.Provider>
 
       {/* Viewport info overlay */}
       <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-2 py-1 rounded">

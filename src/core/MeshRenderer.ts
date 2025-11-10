@@ -51,6 +51,20 @@ export class MeshRenderer extends Component {
   private isValidHexColor(color: string): boolean {
     return /^#[0-9A-Fa-f]{6}$/.test(color);
   }
+
+  // Example update logic for play mode demonstration (T065)
+  // In a real game engine, this would access the Transform component
+  // to rotate the object. For now, this demonstrates the lifecycle.
+  update(deltaTime: number): void {
+    // Example: could modify internal state or trigger events
+    // In a complete implementation, components would have access to
+    // their GameObject to modify Transform, etc.
+    // For MVP demo purposes, this just shows the update is being called
+    if (this.enabled && deltaTime > 0) {
+      // Update logic would go here
+      // console.log(`MeshRenderer updating with dt=${deltaTime}`);
+    }
+  }
 }
 
 // Register MeshRenderer component

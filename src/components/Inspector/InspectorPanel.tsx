@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ComponentRegistry } from "@/core/Component";
 import { MeshRenderer } from "@/core/MeshRenderer";
+import { RotationComponent } from "@/core/RotationComponent";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +49,9 @@ export function InspectorPanel() {
     switch (selectedComponentType) {
       case "MeshRenderer":
         component = new MeshRenderer();
+        break;
+      case "RotationComponent":
+        component = new RotationComponent();
         break;
       default:
         toast({

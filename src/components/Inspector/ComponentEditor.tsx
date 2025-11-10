@@ -17,10 +17,13 @@ import {
   MoreVertical,
   Trash2,
   Box,
+  RotateCw,
 } from "lucide-react";
 import { useSceneStore } from "@/state/sceneStore";
 import type { ComponentData, MeshRendererData } from "@/types";
+import type { RotationComponentData } from "@/core/RotationComponent";
 import { MeshRendererEditor } from "./ComponentEditors/MeshRendererEditor";
+import { RotationComponentEditor } from "./ComponentEditors/RotationComponentEditor";
 
 interface ComponentEditorProps {
   gameObjectId: string;
@@ -124,6 +127,8 @@ function ComponentSection({
     switch (component.type) {
       case "MeshRenderer":
         return <Box className="h-4 w-4 text-muted-foreground" />;
+      case "RotationComponent":
+        return <RotateCw className="h-4 w-4 text-muted-foreground" />;
       default:
         return null;
     }
@@ -191,11 +196,19 @@ function ComponentSection({
             disabled={disabled}
           />
         )}
-        {component.type !== "MeshRenderer" && (
-          <div className="text-xs text-muted-foreground py-2">
-            No editable properties
-          </div>
+        {component.type === "RotationComponent" && (
+          <RotationComponentEditor
+            gameObjectId={gameObjectId}
+            component={component as RotationComponentData}
+            disabled={disabled}
+          />
         )}
+        {component.type !== "MeshRenderer" &&
+          component.type !== "RotationComponent" && (
+            <div className="text-xs text-muted-foreground py-2">
+              No editable properties
+            </div>
+          )}
       </CollapsibleContent>
     </Collapsible>
   );

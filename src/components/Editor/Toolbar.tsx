@@ -4,9 +4,11 @@ import { useEditorStore } from "@/state/editorStore";
 import { StorageService } from "@/services/StorageService";
 import { SceneSerializer } from "@/services/SceneSerializer";
 import { Scene } from "@/core/Scene";
-import { Play, Square, Plus, Save, FolderOpen } from "lucide-react";
+import { Play, Square, Plus, Save, FolderOpen, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export function Toolbar() {
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const addGameObject = useSceneStore((state) => state.addGameObject);
   const gameObjects = useSceneStore((state) => state.gameObjects);
   const setScene = useSceneStore((state) => state.setScene);
@@ -48,14 +50,40 @@ export function Toolbar() {
   };
 
   const handlePlay = () => {
+    // Visual feedback for transition (T067)
+    setIsTransitioning(true);
+
+    // Performance monitoring for mode transition (T066)
+    const startTime = performance.now();
+
     // Save current state before entering play mode
     const scene = new Scene({ gameObjects });
     const snapshot = SceneSerializer.serialize(scene);
     setPlayStateSnapshot(snapshot);
     setMode("play");
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    if (duration > 500) {
+      console.warn(
+        `⚠️ Play mode transition took ${duration.toFixed(2)}ms (target: <500ms)`
+      );
+    } else {
+      console.log(`✓ Play mode transition: ${duration.toFixed(2)}ms`);
+    }
+
+    // Clear transition state
+    setTimeout(() => setIsTransitioning(false), 100);
   };
 
   const handleStop = () => {
+    // Visual feedback for transition (T067)
+    setIsTransitioning(true);
+
+    // Performance monitoring for mode transition (T066)
+    const startTime = performance.now();
+
     // Restore state from snapshot
     const snapshot = useEditorStore.getState().playStateSnapshot;
     if (snapshot) {
@@ -63,6 +91,20 @@ export function Toolbar() {
     }
     setPlayStateSnapshot(null);
     setMode("edit");
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    if (duration > 500) {
+      console.warn(
+        `⚠️ Stop mode transition took ${duration.toFixed(2)}ms (target: <500ms)`
+      );
+    } else {
+      console.log(`✓ Stop mode transition: ${duration.toFixed(2)}ms`);
+    }
+
+    // Clear transition state
+    setTimeout(() => setIsTransitioning(false), 100);
   };
 
   return (
@@ -73,9 +115,14 @@ export function Toolbar() {
           size="sm"
           variant="default"
           onClick={handlePlay}
+          disabled={isTransitioning}
           className="gap-2"
         >
-          <Play className="h-4 w-4" />
+          {isTransitioning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
           Play
         </Button>
       ) : (
@@ -83,9 +130,14 @@ export function Toolbar() {
           size="sm"
           variant="destructive"
           onClick={handleStop}
+          disabled={isTransitioning}
           className="gap-2"
         >
-          <Square className="h-4 w-4" />
+          {isTransitioning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Square className="h-4 w-4" />
+          )}
           Stop
         </Button>
       )}

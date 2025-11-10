@@ -167,19 +167,19 @@ description: "Task list for Scene Editor MVP implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T058 [P] [US3] Add Play and Stop buttons to Toolbar component with mode-dependent visibility
-- [ ] T059 [US3] Implement setMode action in editorStore to handle edit↔play transitions with scene snapshot logic
-- [ ] T060 [US3] On entering play mode: serialize current scene via SceneSerializer, store in playStateSnapshot, start update loop
-- [ ] T061 [US3] Implement component update loop in RenderLoop to call component.update(deltaTime) for all components in play mode
-- [ ] T062 [US3] On exiting play mode: deserialize playStateSnapshot via SceneSerializer, replace sceneStore state, stop update loop
-- [ ] T063 [US3] Add visual "Playing" / "Edit" indicator in ModeIndicator component with color coding per FR-025
-- [ ] T064 [US3] Disable Inspector inputs while in play mode using disabled prop based on editorStore.mode per FR-027
-- [ ] T065 [US3] Add example update logic to MeshRenderer (e.g., rotate over time) to demonstrate component lifecycle
-- [ ] T066 [US3] Ensure mode transition completes within 500ms with performance profiling per FR-025
-- [ ] T067 [US3] Add mode transition visual feedback (button state change, loading indicator during snapshot/restore)
-- [ ] T068 [US3] Prevent adding/removing GameObjects or components while in play mode with UI feedback
+- [X] T058 [P] [US3] Add Play and Stop buttons to Toolbar component with mode-dependent visibility
+- [X] T059 [US3] Implement setMode action in editorStore to handle edit↔play transitions with scene snapshot logic
+- [X] T060 [US3] On entering play mode: serialize current scene via SceneSerializer, store in playStateSnapshot, start update loop
+- [X] T061 [US3] Implement component update loop in RenderLoop to call component.update(deltaTime) for all components in play mode
+- [X] T062 [US3] On exiting play mode: deserialize playStateSnapshot via SceneSerializer, replace sceneStore state, stop update loop
+- [X] T063 [US3] Add visual "Playing" / "Edit" indicator in ModeIndicator component with color coding per FR-025
+- [X] T064 [US3] Disable Inspector inputs while in play mode using disabled prop based on editorStore.mode per FR-027
+- [X] T065 [US3] Add example update logic to MeshRenderer (e.g., rotate over time) to demonstrate component lifecycle
+- [X] T066 [US3] Ensure mode transition completes within 500ms with performance profiling per FR-025
+- [X] T067 [US3] Add mode transition visual feedback (button state change, loading indicator during snapshot/restore)
+- [X] T068 [US3] Prevent adding/removing GameObjects or components while in play mode with UI feedback
 
-**Checkpoint**: All user stories should now be independently functional
+**Checkpoint**: ✅ All user stories (1, 2, AND 3) are now fully implemented and functional!
 
 ---
 
