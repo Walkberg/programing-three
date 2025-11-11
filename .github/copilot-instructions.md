@@ -38,6 +38,7 @@ State: Zustand stores with Immer for immutable updates
 
 ## Recent Changes
 
+- 003-docking-panel-system: Phase 2 complete - Foundation ready with types, store, registry, and serializer (2025-11-11)
 - 003-docking-panel-system: Added flexible docking panel system with drag-and-drop, tabs, splits, and persistence (2025-11-11)
 - 001-scene-editor-mvp: Added TypeScript 5.3+ + React 18, Three.js r160+, Tailwind CSS 4.1, shadcn/ui, Vite 5
 
