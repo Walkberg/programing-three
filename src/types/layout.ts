@@ -88,6 +88,12 @@ export type Zone = LeafZone | SplitZone;
 export type DropMode = "move" | "tab" | "split-h" | "split-v";
 
 /**
+ * Split Position
+ * Defines where a split will occur (which side the new panel will be on)
+ */
+export type SplitPosition = "left" | "right" | "top" | "bottom";
+
+/**
  * Drag State
  * Represents the current drag operation state (transient, not persisted)
  */
@@ -100,6 +106,8 @@ export interface DragState {
   dropTargetZoneId: string | null;
   /** How panel will be dropped */
   dropMode: DropMode | null;
+  /** Where the split will occur (for split modes) */
+  splitPosition?: SplitPosition;
   /** Current mouse coordinates */
   mousePosition: { x: number; y: number };
 }
@@ -155,7 +163,8 @@ export interface LayoutActions {
   /** Update drag target during drag move */
   updateDragTarget: (
     targetZoneId: string | null,
-    dropMode: DropMode | null
+    dropMode: DropMode | null,
+    splitPosition?: SplitPosition
   ) => void;
   /** Commit drag operation and update layout */
   commitDrag: () => void;
@@ -176,6 +185,7 @@ export interface LayoutActions {
     zoneId: string,
     orientation: "horizontal" | "vertical",
     panelId: PanelType,
+    splitPosition?: SplitPosition,
     sizes?: [number, number]
   ) => void;
   /** Update zone sizes (for splitter dragging) */

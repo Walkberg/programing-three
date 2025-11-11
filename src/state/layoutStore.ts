@@ -96,13 +96,14 @@ export const useLayoutStore = create<LayoutStore>()(
             },
           }),
 
-        updateDragTarget: (targetZoneId, dropMode) =>
+        updateDragTarget: (targetZoneId, dropMode, splitPosition) =>
           set((state) => ({
             dragState: state.dragState
               ? {
                   ...state.dragState,
                   dropTargetZoneId: targetZoneId,
                   dropMode,
+                  splitPosition,
                 }
               : null,
           })),
@@ -115,8 +116,13 @@ export const useLayoutStore = create<LayoutStore>()(
             return;
           }
 
-          const { draggedPanelId, sourceZoneId, dropTargetZoneId, dropMode } =
-            dragState;
+          const {
+            draggedPanelId,
+            sourceZoneId,
+            dropTargetZoneId,
+            dropMode,
+            splitPosition,
+          } = dragState;
 
           if (!draggedPanelId || !sourceZoneId) {
             set({ dragState: null });
@@ -131,10 +137,20 @@ export const useLayoutStore = create<LayoutStore>()(
               get().addTabToZone(draggedPanelId, dropTargetZoneId);
               break;
             case "split-h":
-              get().splitZone(dropTargetZoneId, "horizontal", draggedPanelId);
+              get().splitZone(
+                dropTargetZoneId,
+                "horizontal",
+                draggedPanelId,
+                splitPosition
+              );
               break;
             case "split-v":
-              get().splitZone(dropTargetZoneId, "vertical", draggedPanelId);
+              get().splitZone(
+                dropTargetZoneId,
+                "vertical",
+                draggedPanelId,
+                splitPosition
+              );
               break;
           }
 
@@ -166,7 +182,11 @@ export const useLayoutStore = create<LayoutStore>()(
             targetZone.activePanel = panelId;
           }
 
-          set({ rootZone: clonedRoot });
+          // Clean up empty zones
+          const cleanedRoot = cleanupEmptyZones(clonedRoot);
+          if (cleanedRoot) {
+            set({ rootZone: cleanedRoot });
+          }
         },
 
         addTabToZone: (panelId, targetZoneId) => {
@@ -198,7 +218,11 @@ export const useLayoutStore = create<LayoutStore>()(
             targetZone.activePanel = panelId;
           }
 
-          set({ rootZone: clonedRoot });
+          // Clean up empty zones
+          const cleanedRoot = cleanupEmptyZones(clonedRoot);
+          if (cleanedRoot) {
+            set({ rootZone: cleanedRoot });
+          }
         },
 
         setActiveTab: (zoneId, panelId) => {
@@ -215,7 +239,13 @@ export const useLayoutStore = create<LayoutStore>()(
           set({ rootZone: clonedRoot });
         },
 
-        splitZone: (zoneId, orientation, panelId, sizes = [0.5, 0.5]) => {
+        splitZone: (
+          zoneId,
+          orientation,
+          panelId,
+          splitPosition,
+          sizes = [0.5, 0.5] as [number, number]
+        ) => {
           const { rootZone } = get();
           const clonedRoot = JSON.parse(JSON.stringify(rootZone));
 
@@ -231,31 +261,47 @@ export const useLayoutStore = create<LayoutStore>()(
               sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
           }
 
-          const newLeftZone: LeafZone = {
+          // Create new zone for dragged panel
+          const newPanelZone: LeafZone = {
             id: uuidv4(),
             type: "leaf",
             panels: [panelId],
             activePanel: panelId,
           };
 
-          const newRightZone: LeafZone = {
+          // Create zone for existing content
+          const existingContentZone: LeafZone = {
             id: uuidv4(),
             type: "leaf",
             panels: zone.panels,
             activePanel: zone.activePanel,
           };
 
+          // Determine order based on split position
+          // For horizontal: left = new panel first, right = existing first
+          // For vertical: top = new panel first, bottom = existing first
+          const shouldNewPanelBeFirst =
+            splitPosition === "left" || splitPosition === "top";
+
+          const children: [Zone, Zone] = shouldNewPanelBeFirst
+            ? [newPanelZone, existingContentZone]
+            : [existingContentZone, newPanelZone];
+
           const splitZone: SplitZone = {
             id: zone.id,
             type: "split",
             orientation,
-            children: [newLeftZone, newRightZone],
+            children,
             sizes,
           };
 
           Object.assign(zone, splitZone);
 
-          set({ rootZone: clonedRoot });
+          // Clean up empty zones
+          const cleanedRoot = cleanupEmptyZones(clonedRoot);
+          if (cleanedRoot) {
+            set({ rootZone: cleanedRoot });
+          }
         },
 
         updateZoneSizes: (zoneId, sizes) => {
@@ -330,4 +376,58 @@ function findLeafZoneWithPanel(
   }
 
   return null;
+}
+
+/**
+ * Clean up empty zones after drag operations
+ * Removes empty leaf zones and collapses split zones with only one child
+ */
+function cleanupEmptyZones(zone: Zone): Zone | null {
+  // If it's a leaf zone with no panels, mark it for removal
+  if (zone.type === "leaf") {
+    return zone.panels.length > 0 ? zone : null;
+  }
+
+  // If it's a split zone, recursively clean children
+  if (zone.type === "split") {
+    const cleanedLeft = cleanupEmptyZones(zone.children[0]);
+    const cleanedRight = cleanupEmptyZones(zone.children[1]);
+
+    // Both children are empty -> remove this split
+    if (!cleanedLeft && !cleanedRight) {
+      return null;
+    }
+
+    // Left child is empty -> return right child (collapse)
+    if (!cleanedLeft && cleanedRight) {
+      // Preserve the ID if collapsing to avoid breaking references
+      if (cleanedRight.type === "leaf") {
+        return {
+          ...cleanedRight,
+          id: zone.id,
+        };
+      }
+      return cleanedRight;
+    }
+
+    // Right child is empty -> return left child (collapse)
+    if (cleanedLeft && !cleanedRight) {
+      // Preserve the ID if collapsing to avoid breaking references
+      if (cleanedLeft.type === "leaf") {
+        return {
+          ...cleanedLeft,
+          id: zone.id,
+        };
+      }
+      return cleanedLeft;
+    }
+
+    // Both children exist -> keep the split with cleaned children
+    return {
+      ...zone,
+      children: [cleanedLeft!, cleanedRight!] as [Zone, Zone],
+    };
+  }
+
+  return zone;
 }

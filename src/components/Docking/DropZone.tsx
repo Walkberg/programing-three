@@ -3,11 +3,12 @@
 // Visual drop zone indicators for drag and drop
 
 import React from "react";
-import type { DropMode } from "@/types/layout";
+import type { DropMode, SplitPosition } from "@/types/layout";
 
 interface DropZoneProps {
   isActive: boolean;
   mode: DropMode;
+  splitPosition?: SplitPosition;
   className?: string;
 }
 
@@ -17,7 +18,7 @@ interface DropZoneProps {
  * Different styles for different drop modes (move, tab, split-h, split-v)
  */
 export const DropZone = React.memo<DropZoneProps>(
-  ({ isActive, mode, className = "" }) => {
+  ({ isActive, mode, splitPosition, className = "" }) => {
     if (!isActive) return null;
 
     const getModeLabel = () => {
@@ -61,6 +62,24 @@ export const DropZone = React.memo<DropZoneProps>(
       }
     };
 
+    // Get overlay position based on split position
+    const getOverlayPosition = () => {
+      if (!splitPosition) return "w-1/2 h-full top-0 left-0";
+
+      switch (splitPosition) {
+        case "left":
+          return "w-1/2 h-full top-0 left-0";
+        case "right":
+          return "w-1/2 h-full top-0 right-0";
+        case "top":
+          return "w-full h-1/2 top-0 left-0";
+        case "bottom":
+          return "w-full h-1/2 bottom-0 left-0";
+        default:
+          return "w-1/2 h-full top-0 left-0";
+      }
+    };
+
     // For split modes, show a preview bar instead of full overlay
     const isSplitMode = mode === "split-h" || mode === "split-v";
 
@@ -89,11 +108,7 @@ export const DropZone = React.memo<DropZoneProps>(
               ${getModeColor()}
               transition-all duration-150
               pointer-events-none
-              ${
-                mode === "split-h"
-                  ? "w-1/2 h-full top-0 left-0"
-                  : "w-full h-1/2 top-0 left-0"
-              }
+              ${getOverlayPosition()}
             `}
           />
 

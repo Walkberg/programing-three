@@ -65,12 +65,17 @@ export function useDragEndHandler() {
   const updateDragTarget = useLayoutStore((state) => state.updateDragTarget);
 
   // Calculate drop mode based on position
-  const calculateDropMode = (event: any): "tab" | "split-h" | "split-v" => {
+  const calculateDropMode = (
+    event: any
+  ): {
+    mode: "tab" | "split-h" | "split-v";
+    position?: "left" | "right" | "top" | "bottom";
+  } => {
     const { over } = event;
-    if (!over) return "tab";
+    if (!over) return { mode: "tab" };
 
     const dropZoneRect = over.rect;
-    if (!dropZoneRect || !event.activatorEvent) return "tab";
+    if (!dropZoneRect || !event.activatorEvent) return { mode: "tab" };
 
     const initialX = event.activatorEvent.clientX;
     const initialY = event.activatorEvent.clientY;
@@ -91,13 +96,17 @@ export function useDragEndHandler() {
     const bottomEdge = relativeY > 0.8;
 
     // Determine split mode based on which edge is closest
-    if (leftEdge || rightEdge) {
-      return "split-h"; // Horizontal split (side-by-side)
-    } else if (topEdge || bottomEdge) {
-      return "split-v"; // Vertical split (top-bottom)
+    if (leftEdge) {
+      return { mode: "split-h", position: "left" };
+    } else if (rightEdge) {
+      return { mode: "split-h", position: "right" };
+    } else if (topEdge) {
+      return { mode: "split-v", position: "top" };
+    } else if (bottomEdge) {
+      return { mode: "split-v", position: "bottom" };
     }
 
-    return "tab"; // Center area
+    return { mode: "tab" }; // Center area
   };
 
   const handleDragMove = (event: any) => {
@@ -108,8 +117,8 @@ export function useDragEndHandler() {
     const targetZoneId = over.data.current?.zoneId as string;
     if (!targetZoneId) return;
 
-    const dropMode = calculateDropMode(event);
-    updateDragTarget(targetZoneId, dropMode);
+    const { mode, position } = calculateDropMode(event);
+    updateDragTarget(targetZoneId, mode, position);
   };
 
   const handleDragEnd = (event: any) => {
@@ -130,8 +139,8 @@ export function useDragEndHandler() {
       return;
     }
 
-    const dropMode = calculateDropMode(event);
-    updateDragTarget(targetZoneId, dropMode);
+    const { mode, position } = calculateDropMode(event);
+    updateDragTarget(targetZoneId, mode, position);
     commitDrag();
   };
 

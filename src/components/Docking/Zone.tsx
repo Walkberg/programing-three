@@ -53,6 +53,7 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
       dragState?.dropTargetZoneId === zone.id && dragState.dropMode
         ? dragState.dropMode
         : "tab";
+    const splitPosition = dragState?.splitPosition;
 
     // No panels: render empty zone
     if (panels.length === 0) {
@@ -64,7 +65,11 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           data-zone-type="leaf"
         >
           <p className="text-sm">Empty zone</p>
-          <DropZone isActive={isOver && isDraggingPanel} mode={dropMode} />
+          <DropZone
+            isActive={isOver && isDraggingPanel}
+            mode={dropMode}
+            splitPosition={splitPosition}
+          />
         </div>
       );
     }
@@ -79,7 +84,11 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           data-zone-type="leaf"
         >
           <Panel panelType={panels[0]} zoneId={zone.id} />
-          <DropZone isActive={isOver && isDraggingPanel} mode={dropMode} />
+          <DropZone
+            isActive={isOver && isDraggingPanel}
+            mode={dropMode}
+            splitPosition={splitPosition}
+          />
         </div>
       );
     }
@@ -98,7 +107,11 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           activePanel={activePanel || panels[0]}
         />
         {activePanel && <Panel panelType={activePanel} zoneId={zone.id} />}
-        <DropZone isActive={isOver && isDraggingPanel} mode={dropMode} />
+        <DropZone
+          isActive={isOver && isDraggingPanel}
+          mode={dropMode}
+          splitPosition={splitPosition}
+        />
       </div>
     );
   }
