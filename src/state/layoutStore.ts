@@ -81,8 +81,9 @@ export const useLayoutStore = create<LayoutStore>()(
         dragState: null,
 
         setLayout: (zone) => set({ rootZone: zone }),
-        
-        resetLayout: () => set({ rootZone: getDefaultLayout(), dragState: null }),
+
+        resetLayout: () =>
+          set({ rootZone: getDefaultLayout(), dragState: null }),
 
         startDrag: (panelId, zoneId) =>
           set({
@@ -108,6 +109,7 @@ export const useLayoutStore = create<LayoutStore>()(
 
         commitDrag: () => {
           const { dragState } = get();
+
           if (!dragState || !dragState.dropTargetZoneId) {
             set({ dragState: null });
             return;
@@ -144,15 +146,21 @@ export const useLayoutStore = create<LayoutStore>()(
         movePanel: (panelId, targetZoneId) => {
           const { rootZone } = get();
           const clonedRoot = JSON.parse(JSON.stringify(rootZone));
-          
+
           const sourceZone = findLeafZoneWithPanel(clonedRoot, panelId);
+          const targetZone = findZoneById(clonedRoot, targetZoneId);
+
+          // Don't move if source and target are the same zone
+          if (sourceZone && targetZone && sourceZone.id === targetZone.id) {
+            return;
+          }
+
           if (sourceZone) {
             sourceZone.panels = sourceZone.panels.filter((p) => p !== panelId);
             sourceZone.activePanel =
               sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
           }
 
-          const targetZone = findZoneById(clonedRoot, targetZoneId);
           if (targetZone && targetZone.type === "leaf") {
             targetZone.panels = [panelId];
             targetZone.activePanel = panelId;
@@ -164,15 +172,25 @@ export const useLayoutStore = create<LayoutStore>()(
         addTabToZone: (panelId, targetZoneId) => {
           const { rootZone } = get();
           const clonedRoot = JSON.parse(JSON.stringify(rootZone));
-          
+
           const sourceZone = findLeafZoneWithPanel(clonedRoot, panelId);
+          const targetZone = findZoneById(clonedRoot, targetZoneId);
+
+          // If source and target are the same zone, just set it as active
+          if (sourceZone && targetZone && sourceZone.id === targetZone.id) {
+            if (targetZone.type === "leaf") {
+              targetZone.activePanel = panelId;
+              set({ rootZone: clonedRoot });
+            }
+            return;
+          }
+
           if (sourceZone) {
             sourceZone.panels = sourceZone.panels.filter((p) => p !== panelId);
             sourceZone.activePanel =
               sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
           }
 
-          const targetZone = findZoneById(clonedRoot, targetZoneId);
           if (targetZone && targetZone.type === "leaf") {
             if (!targetZone.panels.includes(panelId)) {
               targetZone.panels.push(panelId);
@@ -186,7 +204,7 @@ export const useLayoutStore = create<LayoutStore>()(
         setActiveTab: (zoneId, panelId) => {
           const { rootZone } = get();
           const clonedRoot = JSON.parse(JSON.stringify(rootZone));
-          
+
           const zone = findZoneById(clonedRoot, zoneId);
           if (zone && zone.type === "leaf") {
             if (zone.panels.includes(panelId)) {
@@ -200,7 +218,7 @@ export const useLayoutStore = create<LayoutStore>()(
         splitZone: (zoneId, orientation, panelId, sizes = [0.5, 0.5]) => {
           const { rootZone } = get();
           const clonedRoot = JSON.parse(JSON.stringify(rootZone));
-          
+
           const zone = findZoneById(clonedRoot, zoneId);
           if (!zone || zone.type !== "leaf") {
             return;
@@ -243,7 +261,7 @@ export const useLayoutStore = create<LayoutStore>()(
         updateZoneSizes: (zoneId, sizes) => {
           const { rootZone } = get();
           const clonedRoot = JSON.parse(JSON.stringify(rootZone));
-          
+
           const zone = findZoneById(clonedRoot, zoneId);
           if (zone && zone.type === "split") {
             const total = sizes[0] + sizes[1];

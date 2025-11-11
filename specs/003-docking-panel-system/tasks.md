@@ -98,20 +98,20 @@
 
 ### Implementation for User Story 3
 
-- [ ] T037 [P] [US3] Detect center drop zone (tab mode) in useDragAndDrop collision detection
-- [ ] T038 [P] [US3] Show "Add as Tab" indicator in DropZone for center drops
-- [ ] T039 [US3] Implement addTabToZone action in layoutStore (add panel to zone.panels array)
-- [ ] T040 [US3] Update drag end handler to support tab mode in DockingLayout
-- [ ] T041 [US3] Implement setActiveTab action in layoutStore (update zone.activePanel)
-- [ ] T042 [US3] Add tab click handler in Tab component (calls setActiveTab)
-- [ ] T043 [US3] Render only active tab content in Zone component (unmount inactive tabs)
-- [ ] T044 [US3] Style active tab with highlight in TabBar CSS
-- [ ] T045 [US3] Add tab icons from PanelRegistry to Tab component
-- [ ] T046 [US3] Implement drag tab out of group (separate to new zone) logic
-- [ ] T047 [US3] Handle removing panel from multi-tab zone (update activePanel if removed)
-- [ ] T048 [US3] Test creating tabbed groups, switching tabs, and dragging tabs out
+- [X] T037 [P] [US3] Detect center drop zone (tab mode) in useDragAndDrop collision detection
+- [X] T038 [P] [US3] Show "Add as Tab" indicator in DropZone for center drops
+- [X] T039 [US3] Implement addTabToZone action in layoutStore (add panel to zone.panels array)
+- [X] T040 [US3] Update drag end handler to support tab mode in DockingLayout
+- [X] T041 [US3] Implement setActiveTab action in layoutStore (update zone.activePanel)
+- [X] T042 [US3] Add tab click handler in Tab component (calls setActiveTab)
+- [X] T043 [US3] Render only active tab content in Zone component (unmount inactive tabs)
+- [X] T044 [US3] Style active tab with highlight in TabBar CSS
+- [X] T045 [US3] Add tab icons from PanelRegistry to Tab component
+- [X] T046 [US3] Implement drag tab out of group (separate to new zone) logic
+- [X] T047 [US3] Handle removing panel from multi-tab zone (update activePanel if removed)
+- [X] T048 [US3] Test creating tabbed groups, switching tabs, and dragging tabs out
 
-**Checkpoint**: Tabbed panel groups fully functional - panels can be grouped and ungrouped
+**Checkpoint**: ✅ Tabbed panel groups fully functional - panels can be grouped and ungrouped
 
 ---
 

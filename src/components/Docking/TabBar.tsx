@@ -39,6 +39,7 @@ export const TabBar = React.memo<TabBarProps>(
           <Tab
             key={panelType}
             panelType={panelType}
+            zoneId={zoneId}
             isActive={panelType === activePanel}
             onClick={() => handleTabClick(panelType)}
           />

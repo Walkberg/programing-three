@@ -28,6 +28,7 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
   ({ className = "" }) => {
     const rootZone = useLayoutStore((state) => state.rootZone);
     const dragState = useLayoutStore((state) => state.dragState);
+    const startDrag = useLayoutStore((state) => state.startDrag);
     const loadLayout = useLayoutStore((state) => state.loadLayout);
     const { handleDragEnd, handleDragCancel } = useDragEndHandler();
 
@@ -39,6 +40,16 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
         },
       })
     );
+
+    // Handle drag start
+    const handleDragStart = (event: any) => {
+      const panelId = event.active.data.current?.panelId;
+      const zoneId = event.active.data.current?.zoneId;
+
+      if (panelId && zoneId) {
+        startDrag(panelId, zoneId);
+      }
+    };
 
     // Load persisted layout on mount
     useEffect(() => {
@@ -60,6 +71,7 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
     return (
       <DndContext
         sensors={sensors}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >

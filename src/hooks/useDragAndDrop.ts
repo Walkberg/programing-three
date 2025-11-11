@@ -68,7 +68,6 @@ export function useDragEndHandler() {
     const { active, over } = event;
 
     if (!over) {
-      // No valid drop target - cancel drag
       cancelDrag();
       return;
     }
@@ -83,9 +82,11 @@ export function useDragEndHandler() {
       return;
     }
 
-    // For US2, we only support "move" mode (replace zone content)
-    // US3 will add "tab" mode, US4 will add "split-h/split-v" modes
-    updateDragTarget(targetZoneId, "move");
+    // Always use "tab" mode - we never want to replace zone content
+    // This makes the UX more intuitive: dragging always adds to existing panels
+    const dropMode: "tab" = "tab";
+
+    updateDragTarget(targetZoneId, dropMode);
     commitDrag();
   };
 

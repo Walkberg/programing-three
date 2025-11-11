@@ -1,5 +1,5 @@
 // Zone Component
-// Feature: 003-docking-panel-system - US2
+// Feature: 003-docking-panel-system - US3
 // Renders leaf zones (panels) and split zones with drop zone support
 
 import React from "react";
@@ -45,6 +45,9 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
       zone.id
     );
 
+    // Always use "tab" mode - dragging always adds panels as tabs
+    const dropMode = "tab";
+
     // No panels: render empty zone
     if (panels.length === 0) {
       return (
@@ -55,7 +58,7 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           data-zone-type="leaf"
         >
           <p className="text-sm">Empty zone</p>
-          <DropZone isActive={isOver && isDraggingPanel} mode="move" />
+          <DropZone isActive={isOver && isDraggingPanel} mode={dropMode} />
         </div>
       );
     }
@@ -70,7 +73,7 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           data-zone-type="leaf"
         >
           <Panel panelType={panels[0]} zoneId={zone.id} />
-          <DropZone isActive={isOver && isDraggingPanel} mode="move" />
+          <DropZone isActive={isOver && isDraggingPanel} mode={dropMode} />
         </div>
       );
     }
@@ -89,7 +92,7 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           activePanel={activePanel || panels[0]}
         />
         {activePanel && <Panel panelType={activePanel} zoneId={zone.id} />}
-        <DropZone isActive={isOver && isDraggingPanel} mode="move" />
+        <DropZone isActive={isOver && isDraggingPanel} mode={dropMode} />
       </div>
     );
   }
