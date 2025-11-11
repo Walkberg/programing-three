@@ -136,6 +136,25 @@ export interface SerializedLayout {
 }
 
 /**
+ * Layout Preset
+ * Named layout configuration that can be saved and loaded
+ */
+export interface LayoutPreset {
+  /** Unique identifier (kebab-case slug) */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Whether this is a built-in preset */
+  isDefault: boolean;
+  /** Creation/modification timestamp */
+  timestamp: number;
+  /** Layout configuration */
+  layout: Zone;
+  /** Optional description */
+  description?: string;
+}
+
+/**
  * Layout Store State
  * Zustand store state for layout management
  */
@@ -196,6 +215,20 @@ export interface LayoutActions {
   saveLayout: () => void;
   /** Load layout from localStorage */
   loadLayout: () => void;
+
+  // Preset management
+  /** Save current layout as a preset */
+  savePreset: (name: string, description?: string) => boolean;
+  /** Load a preset by ID */
+  loadPreset: (id: string) => boolean;
+  /** Delete a preset by ID */
+  deletePreset: (id: string) => boolean;
+  /** Rename a preset */
+  renamePreset: (id: string, newName: string) => boolean;
+  /** List all saved presets */
+  listPresets: () => Record<string, LayoutPreset>;
+  /** Get active preset ID */
+  getActivePresetId: () => string | null;
 }
 
 /**

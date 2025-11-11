@@ -2,7 +2,7 @@
 // Feature: 003-docking-panel-system
 // Handles serialization, deserialization, and validation of layout state
 
-import type { Zone, SerializedLayout, PanelType } from "@/types/layout";
+import type { Zone, SerializedLayout, PanelType, LayoutPreset } from "@/types/layout";
 import { getDefaultLayout } from "@/state/layoutStore";
 
 /**
@@ -168,8 +168,9 @@ export class LayoutSerializer {
 
   /**
    * Validate zone tree structure recursively
+   * Made public for use in preset validation (US6/T101)
    */
-  private static validateZoneTree(zone: Zone): boolean {
+  static validateZoneTree(zone: Zone): boolean {
     if (!zone || typeof zone !== "object") {
       return false;
     }
@@ -292,6 +293,152 @@ export class LayoutSerializer {
         version: null,
         timestamp: null,
       };
+    }
+  }
+
+  // ==================== PRESET MANAGEMENT ====================
+
+  /**
+   * localStorage key for presets
+   */
+  private static readonly PRESETS_KEY = "layout-presets";
+
+  /**
+   * localStorage key for active preset ID
+   */
+  private static readonly ACTIVE_PRESET_KEY = "layout-active-preset";
+
+  /**
+   * Save a layout preset
+   */
+  static savePreset(preset: LayoutPreset): boolean {
+    try {
+      const presets = LayoutSerializer.listPresets();
+      presets[preset.id] = preset;
+
+      localStorage.setItem(
+        LayoutSerializer.PRESETS_KEY,
+        JSON.stringify(presets)
+      );
+      return true;
+    } catch (error) {
+      console.error("[LayoutSerializer] Save preset error:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Load a layout preset by ID
+   */
+  static loadPreset(id: string): LayoutPreset | null {
+    try {
+      const presets = LayoutSerializer.listPresets();
+      return presets[id] || null;
+    } catch (error) {
+      console.error("[LayoutSerializer] Load preset error:", error);
+      return null;
+    }
+  }
+
+  /**
+   * List all saved presets
+   */
+  static listPresets(): Record<string, LayoutPreset> {
+    try {
+      const stored = localStorage.getItem(LayoutSerializer.PRESETS_KEY);
+      if (!stored) {
+        return {};
+      }
+
+      return JSON.parse(stored);
+    } catch (error) {
+      console.error("[LayoutSerializer] List presets error:", error);
+      return {};
+    }
+  }
+
+  /**
+   * Delete a preset
+   */
+  static deletePreset(id: string): boolean {
+    try {
+      const presets = LayoutSerializer.listPresets();
+      delete presets[id];
+
+      localStorage.setItem(
+        LayoutSerializer.PRESETS_KEY,
+        JSON.stringify(presets)
+      );
+
+      // Clear active preset if it was deleted
+      const activeId = LayoutSerializer.getActivePresetId();
+      if (activeId === id) {
+        LayoutSerializer.setActivePresetId(null);
+      }
+
+      return true;
+    } catch (error) {
+      console.error("[LayoutSerializer] Delete preset error:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Rename a preset
+   */
+  static renamePreset(id: string, newName: string): boolean {
+    try {
+      const preset = LayoutSerializer.loadPreset(id);
+      if (!preset) {
+        return false;
+      }
+
+      preset.name = newName;
+      preset.timestamp = Date.now();
+
+      return LayoutSerializer.savePreset(preset);
+    } catch (error) {
+      console.error("[LayoutSerializer] Rename preset error:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get active preset ID
+   */
+  static getActivePresetId(): string | null {
+    try {
+      return localStorage.getItem(LayoutSerializer.ACTIVE_PRESET_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Set active preset ID
+   */
+  static setActivePresetId(id: string | null): void {
+    try {
+      if (id === null) {
+        localStorage.removeItem(LayoutSerializer.ACTIVE_PRESET_KEY);
+      } else {
+        localStorage.setItem(LayoutSerializer.ACTIVE_PRESET_KEY, id);
+      }
+    } catch (error) {
+      console.error("[LayoutSerializer] Set active preset error:", error);
+    }
+  }
+
+  /**
+   * Clear all presets
+   */
+  static clearAllPresets(): void {
+    try {
+      localStorage.removeItem(LayoutSerializer.PRESETS_KEY);
+      localStorage.removeItem(LayoutSerializer.ACTIVE_PRESET_KEY);
+      console.info("[LayoutSerializer] All presets cleared");
+    } catch (error) {
+      console.error("[LayoutSerializer] Clear presets error:", error);
     }
   }
 }

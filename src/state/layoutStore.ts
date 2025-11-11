@@ -9,6 +9,7 @@ import type {
   SplitZone,
   PanelType,
   LayoutStore,
+  LayoutPreset,
 } from "@/types/layout";
 import { v4 as uuidv4 } from "uuid";
 import { LayoutSerializer } from "@/services/LayoutSerializer";
@@ -371,6 +372,172 @@ export const useLayoutStore = create<LayoutStore>()(
             set({ rootZone: getDefaultLayout() });
             return false;
           }
+        },
+
+        // ==================== PRESET MANAGEMENT ====================
+
+        savePreset: (name: string, description?: string) => {
+          const { rootZone } = get();
+          const id = name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+
+          const preset: LayoutPreset = {
+            id,
+            name,
+            isDefault: false,
+            timestamp: Date.now(),
+            layout: rootZone,
+            description,
+          };
+
+          const success = LayoutSerializer.savePreset(preset);
+
+          if (success) {
+            toast({
+              title: "Preset Saved",
+              description: `Layout preset "${name}" has been saved.`,
+            });
+          } else {
+            toast({
+              title: "Save Failed",
+              description: "Failed to save preset. Please try again.",
+              variant: "destructive",
+            });
+          }
+
+          return success;
+        },
+
+        loadPreset: (id: string) => {
+          const preset = LayoutSerializer.loadPreset(id);
+
+          if (!preset) {
+            toast({
+              title: "Load Failed",
+              description: "Preset not found.",
+              variant: "destructive",
+            });
+            return false;
+          }
+
+          // Validate preset layout before applying (US6/T101)
+          try {
+            LayoutSerializer.validateZoneTree(preset.layout);
+          } catch (error) {
+            console.error(
+              "[LayoutStore] Invalid preset layout:",
+              id,
+              error
+            );
+
+            toast({
+              title: "Invalid Preset",
+              description: "This preset contains invalid data. Using default layout.",
+              variant: "destructive",
+            });
+
+            // Fallback to default
+            set({ rootZone: getDefaultLayout() });
+            return false;
+          }
+
+          set({ rootZone: preset.layout });
+          LayoutSerializer.setActivePresetId(id);
+
+          toast({
+            title: "Preset Loaded",
+            description: `Layout preset "${preset.name}" has been applied.`,
+          });
+
+          return true;
+        },
+
+        deletePreset: (id: string) => {
+          const preset = LayoutSerializer.loadPreset(id);
+
+          if (!preset) {
+            toast({
+              title: "Delete Failed",
+              description: "Preset not found.",
+              variant: "destructive",
+            });
+            return false;
+          }
+
+          if (preset.isDefault) {
+            toast({
+              title: "Cannot Delete",
+              description: "Built-in presets cannot be deleted.",
+              variant: "destructive",
+            });
+            return false;
+          }
+
+          const success = LayoutSerializer.deletePreset(id);
+
+          if (success) {
+            toast({
+              title: "Preset Deleted",
+              description: `Layout preset "${preset.name}" has been deleted.`,
+            });
+          } else {
+            toast({
+              title: "Delete Failed",
+              description: "Failed to delete preset. Please try again.",
+              variant: "destructive",
+            });
+          }
+
+          return success;
+        },
+
+        renamePreset: (id: string, newName: string) => {
+          const preset = LayoutSerializer.loadPreset(id);
+
+          if (!preset) {
+            toast({
+              title: "Rename Failed",
+              description: "Preset not found.",
+              variant: "destructive",
+            });
+            return false;
+          }
+
+          if (preset.isDefault) {
+            toast({
+              title: "Cannot Rename",
+              description: "Built-in presets cannot be renamed.",
+              variant: "destructive",
+            });
+            return false;
+          }
+
+          const success = LayoutSerializer.renamePreset(id, newName);
+
+          if (success) {
+            toast({
+              title: "Preset Renamed",
+              description: `Preset renamed to "${newName}".`,
+            });
+          } else {
+            toast({
+              title: "Rename Failed",
+              description: "Failed to rename preset. Please try again.",
+              variant: "destructive",
+            });
+          }
+
+          return success;
+        },
+
+        listPresets: () => {
+          return LayoutSerializer.listPresets();
+        },
+
+        getActivePresetId: () => {
+          return LayoutSerializer.getActivePresetId();
         },
       }),
       {

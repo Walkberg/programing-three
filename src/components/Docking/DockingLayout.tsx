@@ -15,6 +15,7 @@ import { Zone } from "./Zone";
 import { useDragEndHandler } from "@/hooks/useDragAndDrop";
 import { useAutoSaveLayout } from "@/hooks/useAutoSaveLayout";
 import { getPanelDefinition } from "./PanelRegistry";
+import { initializeDefaultPresets } from "@/utils/defaultPresets";
 
 interface DockingLayoutProps {
   className?: string;
@@ -59,6 +60,8 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
     // Load persisted layout on mount
     useEffect(() => {
       loadLayout();
+      // Initialize default presets if not present (US6)
+      initializeDefaultPresets();
     }, [loadLayout]);
 
     // Handle Escape key to cancel drag

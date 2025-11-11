@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { LayoutManagerPopover } from "@/components/Docking/LayoutManagerPopover";
 
 export function Toolbar() {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -307,6 +308,9 @@ export function Toolbar() {
       </Button>
 
       <div className="h-6 w-px bg-border mx-2" />
+
+      {/* Layout Manager Popover (US6) */}
+      <LayoutManagerPopover />
 
       {/* Reset Layout button (US5) */}
       <Button
