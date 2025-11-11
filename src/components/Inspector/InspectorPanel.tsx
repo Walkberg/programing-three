@@ -1,16 +1,14 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { useEditorStore } from "@/state/editorStore";
 import { useSceneStore } from "@/state/sceneStore";
 import { TransformEditor } from "./TransformEditor";
 import { ComponentEditor } from "./ComponentEditor";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ComponentRegistry } from "@/core/Component";
 import { MeshRenderer } from "@/core/MeshRenderer";
 import { RotationComponent } from "@/core/RotationComponent";
@@ -30,11 +28,6 @@ export const InspectorPanel = memo(function InspectorPanel() {
   const mode = useEditorStore((state) => state.mode);
   const { toast } = useToast();
 
-  const [showAddComponent, setShowAddComponent] = useState(false);
-  const [selectedComponentType, setSelectedComponentType] = useState<
-    string | null
-  >(null);
-
   const selectedGameObject = gameObjects.find((go) => go.id === selectedId);
 
   // Get available component types from registry
@@ -42,17 +35,17 @@ export const InspectorPanel = memo(function InspectorPanel() {
     (type) => type !== "Transform" // Transform is always present
   );
 
-  const handleAddComponent = () => {
-    if (!selectedComponentType || !selectedGameObject) return;
+  const handleAddComponent = (componentType: string) => {
+    if (!selectedGameObject) return;
 
     // Check for duplicate component
     const hasDuplicate = selectedGameObject.components.some(
-      (c) => c.type === selectedComponentType
+      (c) => c.type === componentType
     );
 
     // Create component instance based on type
     let component;
-    switch (selectedComponentType) {
+    switch (componentType) {
       case "MeshRenderer":
         component = new MeshRenderer();
         break;
@@ -68,7 +61,7 @@ export const InspectorPanel = memo(function InspectorPanel() {
       default:
         toast({
           title: "Error",
-          description: `Unknown component type: ${selectedComponentType}`,
+          description: `Unknown component type: ${componentType}`,
           variant: "destructive",
         });
         return;
@@ -81,14 +74,15 @@ export const InspectorPanel = memo(function InspectorPanel() {
     if (hasDuplicate) {
       toast({
         title: "Duplicate Component",
-        description: `GameObject already has a ${selectedComponentType} component. Another one has been added.`,
+        description: `GameObject already has a ${componentType} component. Another one has been added.`,
         variant: "default",
       });
+    } else {
+      toast({
+        title: "Component Added",
+        description: `${componentType} has been added to ${selectedGameObject.name}`,
+      });
     }
-
-    // Reset selection
-    setShowAddComponent(false);
-    setSelectedComponentType(null);
   };
 
   if (!selectedGameObject) {
@@ -117,61 +111,7 @@ export const InspectorPanel = memo(function InspectorPanel() {
         </p>
       </div>
 
-      {/* Add Component Button (FR-017) */}
-      {!showAddComponent && (
-        <Button
-          onClick={() => setShowAddComponent(true)}
-          disabled={isPlayMode}
-          variant="outline"
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Component
-        </Button>
-      )}
-
-      {/* Add Component Dropdown */}
-      {showAddComponent && (
-        <div className="border border-border rounded-lg p-3 space-y-3">
-          <h4 className="font-medium text-sm">Add Component</h4>
-          <Select
-            value={selectedComponentType || ""}
-            onValueChange={setSelectedComponentType}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select component type..." />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleAddComponent}
-              disabled={!selectedComponentType}
-              size="sm"
-              className="flex-1"
-            >
-              Add
-            </Button>
-            <Button
-              onClick={() => {
-                setShowAddComponent(false);
-                setSelectedComponentType(null);
-              }}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Transform Component */}
       {transformComponent && (
         <TransformEditor
           gameObjectId={selectedGameObject.id}
@@ -179,11 +119,40 @@ export const InspectorPanel = memo(function InspectorPanel() {
           disabled={isPlayMode}
         />
       )}
+
+      {/* Other Components */}
       <ComponentEditor
         gameObjectId={selectedGameObject.id}
         components={selectedGameObject.components}
         disabled={isPlayMode}
       />
+
+      {/* Add Component Popover (at the end) */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button disabled={isPlayMode} variant="outline" className="w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Component
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64" align="start">
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm mb-3">Add Component</h4>
+            <div className="flex flex-col gap-1">
+              {availableTypes.map((type) => (
+                <Button
+                  key={type}
+                  variant="ghost"
+                  className="justify-start w-full"
+                  onClick={() => handleAddComponent(type)}
+                >
+                  {type}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 });

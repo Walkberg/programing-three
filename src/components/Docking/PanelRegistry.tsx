@@ -100,8 +100,8 @@ export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
  */
 export function getPanelDefinition(panelType: PanelType): PanelDefinition {
   // Extract base panel type from instance ID (e.g., "hierarchy-a1b2c3d4" -> "hierarchy")
-  const baseType = panelType.split('-')[0] as PanelType;
-  
+  const baseType = panelType.split("-")[0] as PanelType;
+
   // Return definition for base type, fallback to panelType if no dash found
   return PANEL_REGISTRY[baseType] || PANEL_REGISTRY[panelType];
 }
@@ -119,6 +119,6 @@ export function getAllPanelDefinitions(): PanelDefinition[] {
  */
 export function isValidPanelType(type: string): type is PanelType {
   // Extract base type and check if it exists in registry
-  const baseType = type.split('-')[0];
+  const baseType = type.split("-")[0];
   return baseType in PANEL_REGISTRY;
 }

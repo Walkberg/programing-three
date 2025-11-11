@@ -45,7 +45,7 @@ export function LayoutManagerPopover() {
       // Generate unique panel instance ID
       // Format: panelType-uuid (e.g., "hierarchy-a1b2c3d4")
       const uniquePanelId = `${panelId}-${uuidv4().slice(0, 8)}` as any;
-      
+
       // Add panel to the first leaf zone
       useLayoutStore.getState().addTabToZone(uniquePanelId, firstLeaf.id);
       toast({
