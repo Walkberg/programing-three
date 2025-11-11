@@ -1,11 +1,8 @@
-// Layout Store with Zustand
+// Simplified Layout Store without immer middleware
 // Feature: 003-docking-panel-system
-// Based on LIBRARY_BEST_PRACTICES.md - Zustand best practices
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { immer } from "zustand/middleware/immer";
-import type {} from "@redux-devtools/extension"; // Required for devtools typing
 import type {
   Zone,
   LeafZone,
@@ -16,21 +13,6 @@ import type {
 } from "@/types/layout";
 import { v4 as uuidv4 } from "uuid";
 
-/**
- * Default Layout Configuration
- *
- * Structure:
- * ┌──────────────────────────────────────────────────────┐
- * │                      Toolbar                         │
- * ├──────────┬───────────────────────┬───────────────────┤
- * │          │                       │                   │
- * │ Hierarchy│        Scene          │     Inspector     │
- * │          │                       │                   │
- * │          │                       │                   │
- * ├──────────┴───────────────────────┴───────────────────┤
- * │         Console | Assets (tabs)                      │
- * └──────────────────────────────────────────────────────┘
- */
 export function getDefaultLayout(): Zone {
   const topSplitId = uuidv4();
   const leftZoneId = uuidv4();
@@ -42,30 +24,26 @@ export function getDefaultLayout(): Zone {
     id: topSplitId,
     type: "split",
     orientation: "horizontal",
-    sizes: [0.2, 0.8], // Will be further split
+    sizes: [0.2, 0.8],
     children: [
-      // Left: Hierarchy
       {
         id: leftZoneId,
         type: "leaf",
         panels: ["hierarchy"],
         activePanel: "hierarchy",
       },
-      // Right side: Center + Inspector
       {
         id: uuidv4(),
         type: "split",
         orientation: "horizontal",
-        sizes: [0.75, 0.25], // 60% scene, 20% inspector (of the 80%)
+        sizes: [0.75, 0.25],
         children: [
-          // Center: Scene
           {
             id: centerZoneId,
             type: "leaf",
             panels: ["scene"],
             activePanel: "scene",
           },
-          // Right: Inspector
           {
             id: rightZoneId,
             type: "leaf",
@@ -88,272 +66,218 @@ export function getDefaultLayout(): Zone {
     id: "root",
     type: "split",
     orientation: "vertical",
-    sizes: [0.75, 0.25], // 75% top, 25% bottom
+    sizes: [0.75, 0.25],
     children: [topSplit, bottomZone],
   };
 
   return rootZone;
 }
 
-/**
- * Layout Store with Zustand
- *
- * Middleware stack (outer to inner):
- * 1. devtools - Redux DevTools integration
- * 2. persist - localStorage persistence
- * 3. immer - Immutable state updates with mutation syntax
- *
- * Best practices from LIBRARY_BEST_PRACTICES.md:
- * - Use curried syntax for TypeScript inference
- * - Chain middleware in correct order
- * - Exclude transient state (dragState) from persistence
- * - Use Immer for complex nested updates
- */
 export const useLayoutStore = create<LayoutStore>()(
   devtools(
     persist(
-      immer((set, get) => ({
-        // ===== State =====
+      (set, get) => ({
         rootZone: getDefaultLayout(),
         dragState: null,
 
-        // ===== Layout Management =====
-        setLayout: (zone) =>
-          set((state) => {
-            state.rootZone = zone;
-          }),
+        setLayout: (zone) => set({ rootZone: zone }),
+        
+        resetLayout: () => set({ rootZone: getDefaultLayout(), dragState: null }),
 
-        resetLayout: () =>
-          set((state) => {
-            state.rootZone = getDefaultLayout();
-            state.dragState = null;
-          }),
-
-        // ===== Drag Operations =====
         startDrag: (panelId, zoneId) =>
-          set((state) => {
-            state.dragState = {
+          set({
+            dragState: {
               draggedPanelId: panelId,
               sourceZoneId: zoneId,
               dropTargetZoneId: null,
               dropMode: null,
               mousePosition: { x: 0, y: 0 },
-            };
+            },
           }),
 
         updateDragTarget: (targetZoneId, dropMode) =>
-          set((state) => {
-            if (state.dragState) {
-              state.dragState.dropTargetZoneId = targetZoneId;
-              state.dragState.dropMode = dropMode;
+          set((state) => ({
+            dragState: state.dragState
+              ? {
+                  ...state.dragState,
+                  dropTargetZoneId: targetZoneId,
+                  dropMode,
+                }
+              : null,
+          })),
+
+        commitDrag: () => {
+          const { dragState } = get();
+          if (!dragState || !dragState.dropTargetZoneId) {
+            set({ dragState: null });
+            return;
+          }
+
+          const { draggedPanelId, sourceZoneId, dropTargetZoneId, dropMode } =
+            dragState;
+
+          if (!draggedPanelId || !sourceZoneId) {
+            set({ dragState: null });
+            return;
+          }
+
+          switch (dropMode) {
+            case "move":
+              get().movePanel(draggedPanelId, dropTargetZoneId);
+              break;
+            case "tab":
+              get().addTabToZone(draggedPanelId, dropTargetZoneId);
+              break;
+            case "split-h":
+              get().splitZone(dropTargetZoneId, "horizontal", draggedPanelId);
+              break;
+            case "split-v":
+              get().splitZone(dropTargetZoneId, "vertical", draggedPanelId);
+              break;
+          }
+
+          set({ dragState: null });
+        },
+
+        cancelDrag: () => set({ dragState: null }),
+
+        movePanel: (panelId, targetZoneId) => {
+          const { rootZone } = get();
+          const clonedRoot = JSON.parse(JSON.stringify(rootZone));
+          
+          const sourceZone = findLeafZoneWithPanel(clonedRoot, panelId);
+          if (sourceZone) {
+            sourceZone.panels = sourceZone.panels.filter((p) => p !== panelId);
+            sourceZone.activePanel =
+              sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
+          }
+
+          const targetZone = findZoneById(clonedRoot, targetZoneId);
+          if (targetZone && targetZone.type === "leaf") {
+            targetZone.panels = [panelId];
+            targetZone.activePanel = panelId;
+          }
+
+          set({ rootZone: clonedRoot });
+        },
+
+        addTabToZone: (panelId, targetZoneId) => {
+          const { rootZone } = get();
+          const clonedRoot = JSON.parse(JSON.stringify(rootZone));
+          
+          const sourceZone = findLeafZoneWithPanel(clonedRoot, panelId);
+          if (sourceZone) {
+            sourceZone.panels = sourceZone.panels.filter((p) => p !== panelId);
+            sourceZone.activePanel =
+              sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
+          }
+
+          const targetZone = findZoneById(clonedRoot, targetZoneId);
+          if (targetZone && targetZone.type === "leaf") {
+            if (!targetZone.panels.includes(panelId)) {
+              targetZone.panels.push(panelId);
             }
-          }),
+            targetZone.activePanel = panelId;
+          }
 
-        commitDrag: () =>
-          set((state) => {
-            const { dragState } = state;
-            if (!dragState || !dragState.dropTargetZoneId) {
-              state.dragState = null;
-              return;
+          set({ rootZone: clonedRoot });
+        },
+
+        setActiveTab: (zoneId, panelId) => {
+          const { rootZone } = get();
+          const clonedRoot = JSON.parse(JSON.stringify(rootZone));
+          
+          const zone = findZoneById(clonedRoot, zoneId);
+          if (zone && zone.type === "leaf") {
+            if (zone.panels.includes(panelId)) {
+              zone.activePanel = panelId;
             }
+          }
 
-            const { draggedPanelId, sourceZoneId, dropTargetZoneId, dropMode } =
-              dragState;
+          set({ rootZone: clonedRoot });
+        },
 
-            if (!draggedPanelId || !sourceZoneId) {
-              state.dragState = null;
-              return;
-            }
+        splitZone: (zoneId, orientation, panelId, sizes = [0.5, 0.5]) => {
+          const { rootZone } = get();
+          const clonedRoot = JSON.parse(JSON.stringify(rootZone));
+          
+          const zone = findZoneById(clonedRoot, zoneId);
+          if (!zone || zone.type !== "leaf") {
+            return;
+          }
 
-            // Apply layout transformation based on drop mode
-            switch (dropMode) {
-              case "move":
-                // Move panel to target zone (replace content)
-                get().movePanel(draggedPanelId, dropTargetZoneId);
-                break;
-              case "tab":
-                // Add panel as tab to target zone
-                get().addTabToZone(draggedPanelId, dropTargetZoneId);
-                break;
-              case "split-h":
-                // Split target zone horizontally
-                get().splitZone(dropTargetZoneId, "horizontal", draggedPanelId);
-                break;
-              case "split-v":
-                // Split target zone vertically
-                get().splitZone(dropTargetZoneId, "vertical", draggedPanelId);
-                break;
-            }
+          const sourceZone = findLeafZoneWithPanel(clonedRoot, panelId);
+          if (sourceZone) {
+            sourceZone.panels = sourceZone.panels.filter((p) => p !== panelId);
+            sourceZone.activePanel =
+              sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
+          }
 
-            state.dragState = null;
-          }),
+          const newLeftZone: LeafZone = {
+            id: uuidv4(),
+            type: "leaf",
+            panels: [panelId],
+            activePanel: panelId,
+          };
 
-        cancelDrag: () =>
-          set((state) => {
-            state.dragState = null;
-          }),
+          const newRightZone: LeafZone = {
+            id: uuidv4(),
+            type: "leaf",
+            panels: zone.panels,
+            activePanel: zone.activePanel,
+          };
 
-        // ===== Panel Operations =====
-        movePanel: (panelId, targetZoneId) =>
-          set((state) => {
-            // Find source zone and remove panel
-            const sourceZone = findLeafZoneWithPanel(state.rootZone, panelId);
-            if (sourceZone) {
-              sourceZone.panels = sourceZone.panels.filter(
-                (p) => p !== panelId
-              );
-              if (sourceZone.activePanel === panelId) {
-                sourceZone.activePanel =
-                  sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
-              }
-            }
+          const splitZone: SplitZone = {
+            id: zone.id,
+            type: "split",
+            orientation,
+            children: [newLeftZone, newRightZone],
+            sizes,
+          };
 
-            // Find target zone and add panel
-            const targetZone = findZoneById(state.rootZone, targetZoneId);
-            if (targetZone && targetZone.type === "leaf") {
-              targetZone.panels = [panelId]; // Replace all panels
-              targetZone.activePanel = panelId;
-            }
-          }),
+          Object.assign(zone, splitZone);
 
-        addTabToZone: (panelId, targetZoneId) =>
-          set((state) => {
-            // Find source zone and remove panel
-            const sourceZone = findLeafZoneWithPanel(state.rootZone, panelId);
-            if (sourceZone) {
-              sourceZone.panels = sourceZone.panels.filter(
-                (p) => p !== panelId
-              );
-              if (sourceZone.activePanel === panelId) {
-                sourceZone.activePanel =
-                  sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
-              }
-            }
+          set({ rootZone: clonedRoot });
+        },
 
-            // Find target zone and add panel as tab
-            const targetZone = findZoneById(state.rootZone, targetZoneId);
-            if (targetZone && targetZone.type === "leaf") {
-              if (!targetZone.panels.includes(panelId)) {
-                targetZone.panels.push(panelId);
-              }
-              targetZone.activePanel = panelId; // Make newly added panel active
-            }
-          }),
+        updateZoneSizes: (zoneId, sizes) => {
+          const { rootZone } = get();
+          const clonedRoot = JSON.parse(JSON.stringify(rootZone));
+          
+          const zone = findZoneById(clonedRoot, zoneId);
+          if (zone && zone.type === "split") {
+            const total = sizes[0] + sizes[1];
+            zone.sizes = [sizes[0] / total, sizes[1] / total];
+          }
 
-        setActiveTab: (zoneId, panelId) =>
-          set((state) => {
-            const zone = findZoneById(state.rootZone, zoneId);
-            if (zone && zone.type === "leaf") {
-              if (zone.panels.includes(panelId)) {
-                zone.activePanel = panelId;
-              }
-            }
-          }),
+          set({ rootZone: clonedRoot });
+        },
 
-        // ===== Zone Operations =====
-        splitZone: (zoneId, orientation, panelId, sizes = [0.5, 0.5]) =>
-          set((state) => {
-            const zone = findZoneById(state.rootZone, zoneId);
-            if (!zone || zone.type !== "leaf") return;
-
-            // Remove panel from source zone
-            const sourceZone = findLeafZoneWithPanel(state.rootZone, panelId);
-            if (sourceZone) {
-              sourceZone.panels = sourceZone.panels.filter(
-                (p) => p !== panelId
-              );
-              if (sourceZone.activePanel === panelId) {
-                sourceZone.activePanel =
-                  sourceZone.panels.length > 0 ? sourceZone.panels[0] : null;
-              }
-            }
-
-            // Create two new leaf zones
-            const newLeftId = uuidv4();
-            const newRightId = uuidv4();
-
-            const newLeftZone: LeafZone = {
-              id: newLeftId,
-              type: "leaf",
-              panels: [panelId],
-              activePanel: panelId,
-            };
-
-            const newRightZone: LeafZone = {
-              id: newRightId,
-              type: "leaf",
-              panels: zone.panels,
-              activePanel: zone.activePanel,
-            };
-
-            // Convert current zone to split
-            const splitZone = zone as unknown as SplitZone;
-            splitZone.type = "split";
-            splitZone.orientation = orientation;
-            splitZone.children = [newLeftZone, newRightZone];
-            splitZone.sizes = sizes;
-            // Remove leaf-specific properties
-            delete (splitZone as any).panels;
-            delete (splitZone as any).activePanel;
-          }),
-
-        updateZoneSizes: (zoneId, sizes) =>
-          set((state) => {
-            const zone = findZoneById(state.rootZone, zoneId);
-            if (zone && zone.type === "split") {
-              // Normalize sizes to ensure they sum to 1.0
-              const total = sizes[0] + sizes[1];
-              zone.sizes = [sizes[0] / total, sizes[1] / total];
-            }
-          }),
-
-        // ===== Persistence =====
         saveLayout: () => {
-          // Persistence is automatic with persist middleware
-          // This method can be used to trigger manual saves if needed
           const { rootZone } = get();
           const layout: SerializedLayout = {
             version: "1.0.0",
             rootZone,
             timestamp: Date.now(),
           };
-          // The persist middleware handles the actual saving
           return layout;
         },
 
         loadLayout: () => {
-          // Loading is automatic on store initialization
-          // This method can be used to reload from storage if needed
-          // The persist middleware handles the actual loading
+          // Auto-loaded by persist middleware
         },
-      })),
+      }),
       {
-        name: "layout-storage", // localStorage key
-        version: 1, // For migrations
+        name: "layout-storage",
         partialize: (state) => ({
-          // Only persist rootZone, exclude dragState
           rootZone: state.rootZone,
         }),
-        // Migration strategy for future schema changes
-        migrate: (persistedState: any, version) => {
-          if (version === 0) {
-            // Example migration from v0 to v1
-            // Transform old state format to new format
-            return persistedState;
-          }
-          return persistedState;
-        },
       }
     ),
-    { name: "LayoutStore" } // Redux DevTools name
+    { name: "LayoutStore" }
   )
 );
 
-// ===== Helper Functions =====
-
-/**
- * Find a zone by ID in the zone tree (recursive)
- */
 function findZoneById(zone: Zone, id: string): Zone | null {
   if (zone.id === id) return zone;
 
@@ -368,9 +292,6 @@ function findZoneById(zone: Zone, id: string): Zone | null {
   return null;
 }
 
-/**
- * Find the leaf zone that contains a specific panel (recursive)
- */
 function findLeafZoneWithPanel(
   zone: Zone,
   panelId: PanelType

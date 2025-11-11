@@ -1,9 +1,5 @@
 import { useEffect } from "react";
-import { HierarchyPanel } from "@/components/Hierarchy/HierarchyPanel";
-import { SceneViewport } from "@/components/Viewport/SceneViewport";
-import { InspectorPanel } from "@/components/Inspector/InspectorPanel";
-import { AssetsPanel } from "@/components/Assets/AssetsPanel";
-import { ConsolePanel } from "@/components/Console/ConsolePanel"; // T050
+import { DockingLayout } from "@/components/Docking/DockingLayout";
 import { Toolbar } from "./Toolbar";
 import { ModeIndicator } from "./ModeIndicator";
 import { useEditorStore } from "@/state/editorStore";
@@ -151,36 +147,9 @@ export function EditorLayout() {
 
       <ModeIndicator />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex overflow-hidden">
-          <div className="w-64 border-r border-border bg-card flex flex-col">
-            <div className="p-3 border-b border-border">
-              <h2 className="text-sm font-semibold">Hierarchy</h2>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <HierarchyPanel />
-            </div>
-          </div>
-
-          <div className="flex-1 bg-muted">
-            <SceneViewport />
-          </div>
-
-          <div className="w-80 border-l border-border bg-card flex flex-col">
-            <div className="p-3 border-b border-border">
-              <h2 className="text-sm font-semibold">Inspector</h2>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <InspectorPanel />
-            </div>
-          </div>
-        </div>
-
-        {/* T050: Console panel for code execution logs */}
-        <ConsolePanel />
-
-        {/* T014: Assets panel at bottom */}
-        <AssetsPanel />
+      {/* Docking Layout System - Replaces fixed CSS grid */}
+      <div className="flex-1 overflow-hidden">
+        <DockingLayout />
       </div>
     </div>
   );

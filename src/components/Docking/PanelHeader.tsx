@@ -1,0 +1,47 @@
+// Panel Header Component
+// Feature: 003-docking-panel-system
+// Panel header with icon, title, and drag handle
+
+import React from "react";
+import type { LucideIcon } from "lucide-react";
+import type { PanelType } from "@/types/layout";
+
+interface PanelHeaderProps {
+  panelType: PanelType;
+  zoneId: string;
+  title: string;
+  icon: LucideIcon;
+  className?: string;
+}
+
+/**
+ * Panel Header Component
+ * Displays panel icon, title, and acts as drag handle
+ * Will be enhanced with drag functionality in US2
+ */
+export const PanelHeader = React.memo<PanelHeaderProps>(
+  ({ panelType, zoneId, title, icon: Icon, className = "" }) => {
+    return (
+      <div
+        className={`flex items-center gap-2 px-3 py-2 bg-muted border-b border-border ${className}`}
+        data-panel-header={panelType}
+        data-zone-id={zoneId}
+      >
+        {/* Panel Icon */}
+        <Icon className="w-4 h-4 text-muted-foreground" />
+
+        {/* Panel Title */}
+        <span className="text-sm font-medium text-foreground select-none">
+          {title}
+        </span>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Future: Panel actions (close, settings, etc.) */}
+      </div>
+    );
+  }
+);
+
+PanelHeader.displayName = "PanelHeader";
