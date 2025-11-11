@@ -71,22 +71,22 @@
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Add DragState to layoutStore in `src/state/layoutStore.ts`
-- [ ] T024 [P] [US2] Create useDragAndDrop hook in `src/hooks/useDragAndDrop.ts` (integrates @dnd-kit)
-- [ ] T025 [US2] Make PanelHeader draggable with @dnd-kit useDraggable in `src/components/Docking/PanelHeader.tsx`
-- [ ] T026 [US2] Add drag overlay with DndContext in `src/components/Docking/DockingLayout.tsx`
-- [ ] T027 [P] [US2] Create DropZone component in `src/components/Docking/DropZone.tsx` (visual indicators)
-- [ ] T028 [US2] Implement collision detection in useDragAndDrop hook (calculate drop target zone)
-- [ ] T029 [US2] Add drop zone highlighting logic in DropZone component (show on hover)
-- [ ] T030 [US2] Implement movePanel action in layoutStore (remove from source, add to target)
-- [ ] T031 [US2] Handle drag end with layout commit in DockingLayout onDragEnd
-- [ ] T032 [US2] Add drag visual feedback (opacity, cursor) in PanelHeader CSS
-- [ ] T033 [US2] Implement drag cancel (Escape key or invalid drop) with animation back to source
-- [ ] T034 [US2] Throttle drag move events to 60 FPS in useDragAndDrop hook
-- [ ] T035 [US2] Add layout transition animation (300ms) with CSS transitions in Zone component
-- [ ] T036 [US2] Test dragging panel to empty zone, between zones, and invalid drops
+- [X] T023 [P] [US2] Add DragState to layoutStore in `src/state/layoutStore.ts`
+- [X] T024 [P] [US2] Create useDragAndDrop hook in `src/hooks/useDragAndDrop.ts` (integrates @dnd-kit)
+- [X] T025 [US2] Make PanelHeader draggable with @dnd-kit useDraggable in `src/components/Docking/PanelHeader.tsx`
+- [X] T026 [US2] Add drag overlay with DndContext in `src/components/Docking/DockingLayout.tsx`
+- [X] T027 [P] [US2] Create DropZone component in `src/components/Docking/DropZone.tsx` (visual indicators)
+- [X] T028 [US2] Implement collision detection in useDragAndDrop hook (calculate drop target zone)
+- [X] T029 [US2] Add drop zone highlighting logic in DropZone component (show on hover)
+- [X] T030 [US2] Implement movePanel action in layoutStore (remove from source, add to target)
+- [X] T031 [US2] Handle drag end with layout commit in DockingLayout onDragEnd
+- [X] T032 [US2] Add drag visual feedback (opacity, cursor) in PanelHeader CSS
+- [X] T033 [US2] Implement drag cancel (Escape key or invalid drop) with animation back to source
+- [X] T034 [US2] Throttle drag move events to 60 FPS in useDragAndDrop hook
+- [X] T035 [US2] Add layout transition animation (300ms) with CSS transitions in Zone component
+- [X] T036 [US2] Test dragging panel to empty zone, between zones, and invalid drops
 
-**Checkpoint**: Panel dragging fully functional - panels can be moved between zones
+**Checkpoint**: ✅ Panel dragging fully functional - panels can be moved between zones
 
 ---
 

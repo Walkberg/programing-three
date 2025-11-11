@@ -1,5 +1,5 @@
 // Docking System Components
-// Feature: 003-docking-panel-system
+// Feature: 003-docking-panel-system - US2
 // Central export point for all docking components
 
 export { DockingLayout } from "./DockingLayout";
@@ -8,6 +8,7 @@ export { Panel } from "./Panel";
 export { PanelHeader } from "./PanelHeader";
 export { TabBar } from "./TabBar";
 export { Tab } from "./Tab";
+export { DropZone } from "./DropZone";
 export {
   getPanelDefinition,
   getAllPanelDefinitions,

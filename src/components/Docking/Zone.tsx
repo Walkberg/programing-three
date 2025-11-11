@@ -1,11 +1,13 @@
 // Zone Component
-// Feature: 003-docking-panel-system
-// Renders leaf zones (panels) and split zones (recursive layout) using flexbox
+// Feature: 003-docking-panel-system - US2
+// Renders leaf zones (panels) and split zones with drop zone support
 
 import React from "react";
 import type { Zone as ZoneType, LeafZone, SplitZone } from "@/types/layout";
 import { Panel } from "./Panel";
 import { TabBar } from "./TabBar";
+import { DropZone } from "./DropZone";
+import { useDroppableZone } from "@/hooks/useDragAndDrop";
 
 interface ZoneProps {
   zone: ZoneType;
@@ -15,7 +17,7 @@ interface ZoneProps {
 /**
  * Zone Component
  * Recursively renders the zone tree structure
- * - Leaf zones: Render panel content with optional tab bar
+ * - Leaf zones: Render panel content with optional tab bar + drop zone
  * - Split zones: Render two child zones with flexbox layout
  */
 export const Zone = React.memo<ZoneProps>(({ zone, className = "" }) => {
@@ -34,21 +36,26 @@ Zone.displayName = "Zone";
 
 /**
  * Leaf Zone Content
- * Renders a single panel or tabbed group of panels
+ * Renders a single panel or tabbed group of panels with drop zone
  */
 const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
   ({ zone, className }) => {
     const { panels, activePanel } = zone;
+    const { droppableProps, isOver, isDraggingPanel } = useDroppableZone(
+      zone.id
+    );
 
     // No panels: render empty zone
     if (panels.length === 0) {
       return (
         <div
-          className={`flex items-center justify-center bg-background text-muted-foreground border border-border rounded-lg ${className}`}
+          {...droppableProps}
+          className={`relative flex items-center justify-center bg-background text-muted-foreground border border-border rounded-lg ${className}`}
           data-zone-id={zone.id}
           data-zone-type="leaf"
         >
           <p className="text-sm">Empty zone</p>
+          <DropZone isActive={isOver && isDraggingPanel} mode="move" />
         </div>
       );
     }
@@ -57,11 +64,13 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
     if (panels.length === 1) {
       return (
         <div
-          className={`flex flex-col overflow-hidden border border-border rounded-lg ${className}`}
+          {...droppableProps}
+          className={`relative flex flex-col overflow-hidden border border-border rounded-lg ${className}`}
           data-zone-id={zone.id}
           data-zone-type="leaf"
         >
           <Panel panelType={panels[0]} zoneId={zone.id} />
+          <DropZone isActive={isOver && isDraggingPanel} mode="move" />
         </div>
       );
     }
@@ -69,7 +78,8 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
     // Multiple panels: show tab bar
     return (
       <div
-        className={`flex flex-col overflow-hidden border border-border rounded-lg ${className}`}
+        {...droppableProps}
+        className={`relative flex flex-col overflow-hidden border border-border rounded-lg ${className}`}
         data-zone-id={zone.id}
         data-zone-type="leaf"
       >
@@ -79,6 +89,7 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
           activePanel={activePanel || panels[0]}
         />
         {activePanel && <Panel panelType={activePanel} zoneId={zone.id} />}
+        <DropZone isActive={isOver && isDraggingPanel} mode="move" />
       </div>
     );
   }
