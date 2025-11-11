@@ -63,3 +63,6 @@ export interface SceneState {
   gameObjects: GameObjectData[];
   gameObjectMap: Map<string, GameObjectData>;
 }
+
+// T004: Export asset types
+export * from "./assets";

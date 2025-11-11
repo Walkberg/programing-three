@@ -2,9 +2,19 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
+import { useAssetStore } from "@/state/assetStore";
 import { PerformanceMonitor } from "./PerformanceMonitor";
-import { useState, memo, useRef, createContext, useContext } from "react";
+import {
+  useState,
+  memo,
+  useRef,
+  createContext,
+  useContext,
+  useEffect,
+} from "react"; // T044: added useEffect
 import * as THREE from "three";
+import { CodeExecutor } from "@/services/CodeExecutor"; // T044
+import type { CodeContext } from "@/types"; // T044
 
 // Context to share play mode runtime state without modifying store
 interface PlayModeState {
@@ -19,8 +29,107 @@ const PlayModeContext = createContext<PlayModeState>({
 function UpdateLoop() {
   const gameObjects = useSceneStore((state) => state.gameObjects);
   const mode = useEditorStore((state) => state.mode);
+  const assets = useAssetStore((state) => state.assets);
   const lastTimeRef = useRef<number>(0);
   const playModeState = useContext(PlayModeContext);
+  const initializedComponentsRef = useRef<Set<string>>(new Set()); // T044: Track initialized components
+
+  // Helper function to get code from component (either inline or from asset)
+  const getCodeFromComponent = async (
+    component: any
+  ): Promise<{
+    code: string;
+    language: "typescript" | "javascript";
+  } | null> => {
+    // If component has an assetId, load code from asset
+    if (component.assetId) {
+      const asset = assets.find((a) => a.id === component.assetId);
+      if (asset && asset.data instanceof Blob) {
+        const code = await asset.data.text();
+        const language = asset.format === ".ts" ? "typescript" : "javascript";
+        return { code, language };
+      }
+    }
+
+    // Otherwise use inline code
+    if (component.code && component.code.trim()) {
+      return {
+        code: component.code,
+        language: component.language || "typescript",
+      };
+    }
+
+    return null;
+  };
+
+  // T044: Initialize CodeComponents when play mode starts
+  useEffect(() => {
+    if (mode === "play") {
+      // Find all CodeComponents that haven't been initialized
+      gameObjects.forEach((gameObject) => {
+        gameObject.components.forEach(async (component: any) => {
+          if (
+            component.type === "Code" &&
+            component.enabled &&
+            !initializedComponentsRef.current.has(component.id)
+          ) {
+            // Create CodeContext for initialization
+            const transform = gameObject.components.find(
+              (c: any) => c.type === "Transform"
+            ) as any;
+
+            const context: CodeContext = {
+              gameObject: {
+                id: gameObject.id,
+                name: gameObject.name,
+                components: gameObject.components,
+              },
+              transform: {
+                position: { ...transform.position },
+                rotation: { ...transform.rotation },
+                scale: { ...transform.scale },
+              },
+              scene: {
+                getGameObjectById: (id: string) =>
+                  gameObjects.find((go) => go.id === id) || null,
+                getAllGameObjects: () => gameObjects,
+              },
+              deltaTime: 0,
+            };
+
+            // Get code from asset or inline
+            const codeData = await getCodeFromComponent(component);
+            if (codeData) {
+              // Wrap code with start() call
+              const initCode = `
+${codeData.code}
+if (typeof start === 'function') {
+  start();
+}
+              `;
+
+              CodeExecutor.transpileAndExecute(
+                initCode,
+                codeData.language,
+                context
+              ).catch((error) => {
+                console.error(
+                  `[CodeComponent] Failed to initialize ${gameObject.name}:`,
+                  error
+                );
+              });
+            }
+
+            initializedComponentsRef.current.add(component.id);
+          }
+        });
+      });
+    } else {
+      // T046: Clear initialized components when leaving play mode
+      initializedComponentsRef.current.clear();
+      CodeExecutor.cancelAll();
+    }
+  }, [mode, gameObjects, assets]);
 
   useFrame((state) => {
     // Only run update loop in play mode
@@ -34,11 +143,60 @@ function UpdateLoop() {
     const deltaTime = currentTime - lastTimeRef.current;
     lastTimeRef.current = currentTime;
 
-    // Call update() on all enabled components and accumulate runtime state
+    // T045: Call update() on all enabled components
     gameObjects.forEach((gameObject) => {
-      gameObject.components.forEach((component: any) => {
+      gameObject.components.forEach(async (component: any) => {
         if (component.enabled && typeof component.update === "function") {
           component.update(deltaTime);
+        }
+
+        // T045: Handle CodeComponent update() lifecycle
+        if (component.enabled && component.type === "Code") {
+          const transform = gameObject.components.find(
+            (c: any) => c.type === "Transform"
+          ) as any;
+
+          const context: CodeContext = {
+            gameObject: {
+              id: gameObject.id,
+              name: gameObject.name,
+              components: gameObject.components,
+            },
+            transform: {
+              position: { ...transform.position },
+              rotation: { ...transform.rotation },
+              scale: { ...transform.scale },
+            },
+            scene: {
+              getGameObjectById: (id: string) =>
+                gameObjects.find((go) => go.id === id) || null,
+              getAllGameObjects: () => gameObjects,
+            },
+            deltaTime,
+          };
+
+          // Get code from asset or inline
+          const codeData = await getCodeFromComponent(component);
+          if (codeData) {
+            // Wrap code with update() call
+            const updateCode = `
+${codeData.code}
+if (typeof update === 'function') {
+  update(deltaTime);
+}
+            `;
+
+            CodeExecutor.transpileAndExecute(
+              updateCode,
+              codeData.language,
+              context
+            ).catch((error) => {
+              console.error(
+                `[CodeComponent] Failed to update ${gameObject.name}:`,
+                error
+              );
+            });
+          }
         }
 
         // Example: Handle RotationComponent updates
@@ -92,6 +250,7 @@ function GameObjectMesh({ gameObject, isSelected }: GameObjectMeshProps) {
   const playModeState = useContext(PlayModeContext);
   const meshRef = useRef<THREE.Mesh>(null);
   const highlightRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   const transform = gameObject.components.find(
     (c: any) => c.type === "Transform"
@@ -99,31 +258,93 @@ function GameObjectMesh({ gameObject, isSelected }: GameObjectMeshProps) {
   const meshRenderer = gameObject.components.find(
     (c: any) => c.type === "MeshRenderer"
   ) as any;
+  const model3D = gameObject.components.find(
+    (c: any) => c.type === "Model3D"
+  ) as any;
   const rotationComponent = gameObject.components.find(
     (c: any) => c.type === "RotationComponent"
   ) as any;
 
   // Update mesh rotation every frame in play mode
   useFrame(() => {
-    if (mode === "play" && rotationComponent && meshRef.current) {
+    if (mode === "play" && rotationComponent) {
       const rotationOffset =
         playModeState.rotationOffsets.get(gameObject.id) || 0;
 
-      meshRef.current.rotation.set(
-        transform.rotation.x,
-        transform.rotation.y + rotationOffset,
-        transform.rotation.z,
-        transform.rotation.order || "XYZ"
-      );
+      const targetRef = meshRef.current || groupRef.current;
+      if (targetRef) {
+        targetRef.rotation.set(
+          transform.rotation.x,
+          transform.rotation.y + rotationOffset,
+          transform.rotation.z,
+          transform.rotation.order || "XYZ"
+        );
 
-      // Also update highlight if selected
-      if (highlightRef.current) {
-        highlightRef.current.rotation.copy(meshRef.current.rotation);
+        // Also update highlight if selected
+        if (highlightRef.current) {
+          highlightRef.current.rotation.copy(targetRef.rotation);
+        }
       }
     }
   });
 
-  if (!transform || !meshRenderer || !meshRenderer.visible) {
+  if (!transform) {
+    return null;
+  }
+
+  // T029: Handle Model3D component (prioritize over MeshRenderer)
+  if (model3D && model3D.loadedModel) {
+    const position = new THREE.Vector3(
+      transform.position.x,
+      transform.position.y,
+      transform.position.z
+    );
+
+    const rotation = new THREE.Euler(
+      transform.rotation.x,
+      transform.rotation.y,
+      transform.rotation.z,
+      transform.rotation.order || "XYZ"
+    );
+
+    const scale = new THREE.Vector3(
+      transform.scale.x,
+      transform.scale.y,
+      transform.scale.z
+    );
+
+    const handleClick = () => {
+      if (mode === "edit") {
+        selectGameObject(gameObject.id);
+      }
+    };
+
+    return (
+      <group
+        ref={groupRef}
+        position={position}
+        rotation={rotation}
+        scale={scale}
+        onClick={handleClick}
+      >
+        <primitive object={model3D.loadedModel.clone()} />
+        {isSelected && (
+          <mesh ref={highlightRef}>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshBasicMaterial
+              color="#ffff00"
+              wireframe
+              transparent
+              opacity={0.5}
+            />
+          </mesh>
+        )}
+      </group>
+    );
+  }
+
+  // Fall back to MeshRenderer if no Model3D
+  if (!meshRenderer || !meshRenderer.visible) {
     return null;
   }
 

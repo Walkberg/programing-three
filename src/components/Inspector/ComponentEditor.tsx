@@ -18,12 +18,20 @@ import {
   Trash2,
   Box,
   RotateCw,
+  Boxes,
+  Code, // T054
 } from "lucide-react";
 import { useSceneStore } from "@/state/sceneStore";
 import type { ComponentData, MeshRendererData } from "@/types";
 import type { RotationComponentData } from "@/core/RotationComponent";
+import type { Model3DComponentData } from "@/core/Model3DComponent";
+import type { CodeComponentData } from "@/core/CodeComponent"; // T054
 import { MeshRendererEditor } from "./ComponentEditors/MeshRendererEditor";
 import { RotationComponentEditor } from "./ComponentEditors/RotationComponentEditor";
+import { Model3DEditor } from "./ComponentEditors/Model3DEditor";
+import { CodeEditor } from "./ComponentEditors/CodeEditor"; // T054
+import { Model3DComponent } from "@/core/Model3DComponent";
+import { CodeComponent } from "@/core/CodeComponent"; // T054
 
 interface ComponentEditorProps {
   gameObjectId: string;
@@ -129,6 +137,10 @@ function ComponentSection({
         return <Box className="h-4 w-4 text-muted-foreground" />;
       case "RotationComponent":
         return <RotateCw className="h-4 w-4 text-muted-foreground" />;
+      case "Model3D":
+        return <Boxes className="h-4 w-4 text-muted-foreground" />;
+      case "Code": // T054
+        return <Code className="h-4 w-4 text-muted-foreground" />;
       default:
         return null;
     }
@@ -203,8 +215,23 @@ function ComponentSection({
             disabled={disabled}
           />
         )}
+        {component.type === "Model3D" && (
+          <Model3DEditor
+            gameObjectId={gameObjectId}
+            component={new Model3DComponent(component as Model3DComponentData)}
+          />
+        )}
+        {/* T054: Code component editor */}
+        {component.type === "Code" && (
+          <CodeEditor
+            gameObjectId={gameObjectId}
+            component={new CodeComponent(component as CodeComponentData)}
+          />
+        )}
         {component.type !== "MeshRenderer" &&
-          component.type !== "RotationComponent" && (
+          component.type !== "RotationComponent" &&
+          component.type !== "Model3D" &&
+          component.type !== "Code" && (
             <div className="text-xs text-muted-foreground py-2">
               No editable properties
             </div>

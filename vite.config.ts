@@ -11,4 +11,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // T002: Monaco Editor worker configuration
+  worker: {
+    format: "es",
+  },
+  optimizeDeps: {
+    include: ["@monaco-editor/react"],
+  },
 });

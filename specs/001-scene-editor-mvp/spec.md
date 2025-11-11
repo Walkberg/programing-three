@@ -97,7 +97,7 @@ A user wants to add behavior and visual properties to their GameObjects by attac
 
 ---
 
-### User Story 3 - Play Mode Execution (Priority: P3) ⏳ **PENDING**
+### User Story 3 - Play Mode Execution (Priority: P3) 🔄 **IN PROGRESS**
 
 A user has composed a scene with GameObjects and components. They want to test their game's runtime behavior by clicking a "Play" button to start game execution, then stop it to return to editing mode.
 
@@ -105,15 +105,33 @@ A user has composed a scene with GameObjects and components. They want to test t
 
 **Independent Test**: Can be tested by creating a scene with GameObjects (from Story 1), adding components (from Story 2), clicking the "Play" button, observing that components execute their runtime behavior (e.g., rotation, movement), then clicking "Stop" to return to the editable scene state.
 
-**Implementation Status**: Not yet started. Awaiting completion of US1 and US2 before beginning.
+**Implementation Status**: Partially implemented. Play mode infrastructure exists (mode toggle, UpdateLoop) but CodeComponent asset-based execution needs refinement.
+
+**Completed**:
+- ✅ Play/Stop mode toggle in Toolbar
+- ✅ Mode state management (editorStore)
+- ✅ UpdateLoop with deltaTime calculation
+- ✅ Component update() lifecycle execution
+- ✅ RotationComponent with runtime animation
+- ✅ CodeComponent infrastructure (Monaco editor, sandboxed worker execution)
+- ✅ Console panel with log capture from user code
+- ✅ Babel transpilation with CommonJS module support
+- ✅ Worker auto-instantiation of `export default class` components
+- ✅ Transform modification tracking and application to scene store
+- ✅ Asset selector dropdown in CodeComponent editor
+
+**In Progress / Needs Refinement**:
+- 🔄 Asset-based code loading (implemented but not tested end-to-end)
+- 🔄 Class-based component lifecycle (initialize/update) execution from assets
+- 🔄 Async code loading in UpdateLoop (needs testing)
 
 **Acceptance Scenarios**:
 
-1. **Given** a scene with GameObjects and components, **When** user clicks the "Play" button, **Then** the editor enters play mode, the scene viewport shows a "Playing" indicator, and component update loops begin executing
-2. **Given** the editor is in play mode, **When** components have update logic (e.g., rotate over time), **Then** the GameObjects animate according to their component behaviors in real-time
-3. **Given** the editor is in play mode, **When** user clicks the "Stop" button, **Then** play mode ends, the scene reverts to its pre-play state, and the viewport returns to edit mode
-4. **Given** the editor is in edit mode, **When** user is actively editing GameObject properties, **Then** the "Play" button is clickable and shows no loading/disabled state
-5. **Given** the editor transitions between edit and play modes, **When** the mode change occurs, **Then** the transition completes within 500ms with visual feedback (button state change, viewport indicator)
+1. **Given** a scene with GameObjects and components, **When** user clicks the "Play" button, **Then** the editor enters play mode, the scene viewport shows a "Playing" indicator, and component update loops begin executing ✅
+2. **Given** the editor is in play mode, **When** components have update logic (e.g., rotate over time), **Then** the GameObjects animate according to their component behaviors in real-time ✅ (RotationComponent works)
+3. **Given** the editor is in play mode, **When** user clicks the "Stop" button, **Then** play mode ends, the scene reverts to its pre-play state, and the viewport returns to edit mode ✅
+4. **Given** the editor is in edit mode, **When** user is actively editing GameObject properties, **Then** the "Play" button is clickable and shows no loading/disabled state ✅
+5. **Given** the editor transitions between edit and play modes, **When** the mode change occurs, **Then** the transition completes within 500ms with visual feedback (button state change, viewport indicator) ✅
 
 ---
 
@@ -153,16 +171,27 @@ A user has composed a scene with GameObjects and components. They want to test t
 - **FR-019**: System MUST allow users to add multiple components to a single GameObject ✅ *Implemented*
 - **FR-020**: System MUST display all attached components in the inspector panel with expandable/collapsible sections ✅ *Implemented with shadcn/ui Collapsible*
 - **FR-021**: System MUST allow users to configure component properties through appropriate input controls (numeric inputs, dropdowns, color pickers) ✅ *Implemented*
-- **FR-022**: System MUST provide a "Play" button in the editor toolbar that enters play mode ⏳ *Pending - US3*
-- **FR-023**: System MUST execute component update loops (game logic) when in play mode ⏳ *Pending - US3*
-- **FR-024**: System MUST provide a "Stop" button that exits play mode and reverts the scene to its pre-play state ⏳ *Pending - US3*
-- **FR-025**: System MUST visually indicate the current editor mode (edit vs play) in the interface ⏳ *Pending - US3*
-- **FR-026**: System MUST maintain scene state separately from play mode state to enable reversion on stop ⏳ *Pending - US3*
+- **FR-022**: System MUST provide a "Play" button in the editor toolbar that enters play mode ✅ *Implemented*
+- **FR-023**: System MUST execute component update loops (game logic) when in play mode ✅ *Implemented*
+- **FR-024**: System MUST provide a "Stop" button that exits play mode and reverts the scene to its pre-play state ✅ *Implemented*
+- **FR-025**: System MUST visually indicate the current editor mode (edit vs play) in the interface ✅ *Implemented - ModeIndicator component*
+- **FR-026**: System MUST maintain scene state separately from play mode state to enable reversion on stop ✅ *Implemented - mode isolation*
 - **FR-027**: System MUST prevent editing of GameObject and component properties while in play mode ✅ *Implemented - disabled prop propagation*
-- **FR-028**: System MUST serialize scene data (GameObjects and their components) to JSON format ⏳ *Pending - Scene Persistence*
-- **FR-029**: System MUST provide a "Save Scene" button that stores the current scene to browser localStorage ⏳ *Pending - Scene Persistence*
-- **FR-030**: System MUST provide a "Load Scene" button that retrieves and restores a previously saved scene from browser localStorage ⏳ *Pending - Scene Persistence*
-- **FR-031**: System MUST display confirmation when a scene is successfully saved or loaded ⏳ *Pending - Scene Persistence*
+- **FR-028**: System MUST allow users to write custom code components using TypeScript or JavaScript 🔄 *Partially implemented - needs asset testing*
+- **FR-029**: System MUST provide a Monaco-based code editor with syntax highlighting and error checking ✅ *Implemented*
+- **FR-030**: System MUST execute user code in a sandboxed Web Worker environment with 100ms timeout ✅ *Implemented*
+- **FR-031**: System MUST intercept and display console.log/warn/error from user code in a Console panel ✅ *Implemented*
+- **FR-032**: System MUST support TypeScript-to-JavaScript transpilation using Babel ✅ *Implemented*
+- **FR-033**: System MUST support ES module syntax (export default class) in user code ✅ *Implemented with CommonJS transform*
+- **FR-034**: System MUST auto-instantiate exported classes and call initialize()/update() lifecycle methods ✅ *Implemented in worker*
+- **FR-035**: System MUST allow CodeComponents to reference code assets from the asset library 🔄 *Implemented but needs testing*
+- **FR-036**: System MUST provide an asset selector dropdown in CodeComponent inspector ✅ *Implemented*
+- **FR-037**: System MUST load code from selected asset before execution in play mode 🔄 *Implemented but needs testing*
+- **FR-038**: System MUST apply transform modifications made by user code back to the scene store ✅ *Implemented*
+- **FR-039**: System MUST serialize scene data (GameObjects and their components) to JSON format ⏳ *Pending - Scene Persistence*
+- **FR-040**: System MUST provide a "Save Scene" button that stores the current scene to browser localStorage ⏳ *Pending - Scene Persistence*
+- **FR-041**: System MUST provide a "Load Scene" button that retrieves and restores a previously saved scene from browser localStorage ⏳ *Pending - Scene Persistence*
+- **FR-042**: System MUST display confirmation when a scene is successfully saved or loaded ⏳ *Pending - Scene Persistence*
 - **FR-032**: System MUST allow users to add multiple components of the same type to a GameObject ✅ *Implemented*
 - **FR-033**: System MUST display a dismissible warning notification when a user adds a duplicate component type to a GameObject ✅ *Implemented with shadcn/ui Toast*
 - **FR-034**: System MUST provide a visual indicator (icon) for each component type in the inspector panel ✅ *Implemented - Box icon for MeshRenderer, Move3d icon for Transform*
@@ -174,12 +203,15 @@ A user has composed a scene with GameObjects and components. They want to test t
 - **FR-040**: System MUST support MeshRenderer color configuration with hex color input and visual preview ✅ *Implemented*
 - **FR-041**: System MUST validate hex color format (#RRGGBB) and display error messages for invalid input ✅ *Implemented*
 - **FR-042**: System MUST display real-time FPS counter in the scene viewport ✅ *Implemented with color-coded display*
+- **FR-043**: System MUST provide example component assets (RotationComponent, CircularMovement, PulsingScale) ✅ *Implemented in public/examples/*
 
 ### Key Entities
 
 - **GameObject**: Represents an entity in the game scene. Contains a unique identifier, name, transform (position/rotation/scale), list of attached components, and optional parent-child relationships for hierarchy. GameObjects without components are empty containers.
 
-- **Component**: Represents behavior or data attached to a GameObject. Has a type identifier, reference to parent GameObject, configurable properties (key-value pairs), and lifecycle hooks (initialize, update, render). Examples include Transform, MeshRenderer, Camera, Light.
+- **Component**: Represents behavior or data attached to a GameObject. Has a type identifier, reference to parent GameObject, configurable properties (key-value pairs), and lifecycle hooks (initialize, update, render). Examples include Transform, MeshRenderer, Camera, Light, and user-defined CodeComponents with custom TypeScript/JavaScript logic.
+
+- **CodeComponent**: Special component type that executes user-written code. Contains either inline code or a reference to a code asset (assetId). Supports TypeScript and JavaScript with Babel transpilation. Code runs in a sandboxed Web Worker with 100ms timeout. Exported classes are auto-instantiated and their initialize()/update() methods are called during play mode. Transform modifications made in user code are automatically applied to the scene store.
 
 - **Scene**: Represents the entire game world. Contains the root-level GameObjects (hierarchy), camera configuration, and scene settings. Serializable to persist between editor sessions.
 
@@ -202,15 +234,35 @@ A user has composed a scene with GameObjects and components. They want to test t
 
 ### Current Implementation Status
 
-**Completed (67% of MVP)**:
+**Completed (85% of MVP)**:
 - ✅ User Story 1: Create and View GameObjects (22/22 tasks)
 - ✅ User Story 2: Add and Configure Components (12/12 tasks)
-- ✅ Total: 34 tasks completed
+- 🔄 User Story 3: Play Mode Execution (9/11 tasks completed, 2 in refinement)
+  - ✅ Play/Stop mode toggle
+  - ✅ Component update loops
+  - ✅ CodeComponent with Monaco editor
+  - ✅ Sandboxed worker execution
+  - ✅ Console panel
+  - ✅ Babel transpilation with ES modules support
+  - ✅ Auto-instantiation of exported classes
+  - ✅ Transform modification tracking
+  - ✅ Asset selector for CodeComponents
+  - 🔄 Asset-based code loading (needs testing)
+  - 🔄 End-to-end class component workflow (needs testing)
+- ✅ Total: 43 tasks completed, 2 in refinement
 
-**Pending (33% of MVP)**:
-- ⏳ User Story 3: Play Mode Execution (11 tasks)
+**Pending (15% of MVP)**:
 - ⏳ Scene Persistence: Save/Load functionality (4 tasks)
 - ⏳ Polish & Testing: Final refinements
+
+**Recent Additions (Session 2025-11-11)**:
+- ✅ CodeComponent.assetId field for referencing code assets
+- ✅ Babel CommonJS plugin for ES module transformation
+- ✅ Worker module execution context (exports/module support)
+- ✅ Auto-detection and instantiation of exported classes in worker
+- ✅ Asset dropdown selector in CodeEditor UI
+- ✅ Async code loading from assets in SceneViewport
+- ✅ Example component assets (RotationComponent, CircularMovement, PulsingScale)
 
 **Technology Validation**:
 - ✅ Tailwind CSS 4.1 successfully integrated with Vite 7
@@ -219,6 +271,9 @@ A user has composed a scene with GameObjects and components. They want to test t
 - ✅ Zustand state management with O(1) GameObject access
 - ✅ Zod validation preventing invalid property values
 - ✅ Real-time FPS monitoring confirming 60 FPS performance target
+- ✅ Monaco Editor integration with TypeScript support
+- ✅ Web Worker sandboxing with Babel transpilation
+- ✅ IndexedDB asset storage via idb library
 
 ### Assumptions
 

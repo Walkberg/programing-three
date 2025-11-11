@@ -2,10 +2,14 @@ import { useEffect } from "react";
 import { HierarchyPanel } from "@/components/Hierarchy/HierarchyPanel";
 import { SceneViewport } from "@/components/Viewport/SceneViewport";
 import { InspectorPanel } from "@/components/Inspector/InspectorPanel";
+import { AssetsPanel } from "@/components/Assets/AssetsPanel";
+import { ConsolePanel } from "@/components/Console/ConsolePanel"; // T050
 import { Toolbar } from "./Toolbar";
 import { ModeIndicator } from "./ModeIndicator";
 import { useEditorStore } from "@/state/editorStore";
 import { useSceneStore } from "@/state/sceneStore";
+import { useAssetStore } from "@/state/assetStore";
+import { AssetService } from "@/services/AssetService";
 import { Scene } from "@/core/Scene";
 import { SceneSerializer } from "@/services/SceneSerializer";
 import { StorageService } from "@/services/StorageService";
@@ -21,7 +25,21 @@ export function EditorLayout() {
   const removeGameObject = useSceneStore((state) => state.removeGameObject);
   const gameObjects = useSceneStore((state) => state.gameObjects);
   const setScene = useSceneStore((state) => state.setScene);
+  const setAssets = useAssetStore((state) => state.setAssets);
   const { toast } = useToast();
+
+  // Load assets from IndexedDB on mount (T022)
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const assets = await AssetService.listAssets();
+        setAssets(assets);
+      } catch (error) {
+        console.error("Failed to load assets:", error);
+      }
+    };
+    loadAssets();
+  }, [setAssets]);
 
   // Keyboard shortcuts (T082: proper cleanup)
   useEffect(() => {
@@ -133,28 +151,36 @@ export function EditorLayout() {
 
       <ModeIndicator />
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-64 border-r border-border bg-card flex flex-col">
-          <div className="p-3 border-b border-border">
-            <h2 className="text-sm font-semibold">Hierarchy</h2>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
+          <div className="w-64 border-r border-border bg-card flex flex-col">
+            <div className="p-3 border-b border-border">
+              <h2 className="text-sm font-semibold">Hierarchy</h2>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <HierarchyPanel />
+            </div>
           </div>
-          <div className="flex-1 overflow-auto">
-            <HierarchyPanel />
+
+          <div className="flex-1 bg-muted">
+            <SceneViewport />
+          </div>
+
+          <div className="w-80 border-l border-border bg-card flex flex-col">
+            <div className="p-3 border-b border-border">
+              <h2 className="text-sm font-semibold">Inspector</h2>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <InspectorPanel />
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 bg-muted">
-          <SceneViewport />
-        </div>
+        {/* T050: Console panel for code execution logs */}
+        <ConsolePanel />
 
-        <div className="w-80 border-l border-border bg-card flex flex-col">
-          <div className="p-3 border-b border-border">
-            <h2 className="text-sm font-semibold">Inspector</h2>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <InspectorPanel />
-          </div>
-        </div>
+        {/* T014: Assets panel at bottom */}
+        <AssetsPanel />
       </div>
     </div>
   );

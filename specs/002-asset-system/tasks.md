@@ -15,24 +15,24 @@ This feature adds asset import and custom scripting to the Scene Editor MVP. It 
 
 Setup tasks for asset system dependencies and infrastructure.
 
-- [ ] T001 Install dependencies: `idb`, `@monaco-editor/react`, `@babel/standalone`, install with `npm install idb @monaco-editor/react @babel/standalone`
-- [ ] T002 Configure Vite for Monaco Editor workers in `vite.config.ts` (add worker plugin config)
-- [ ] T003 Create IndexedDB schema in `src/services/AssetService.ts` (define stores for assets)
-- [ ] T004 Create types in `src/types/assets.ts` (Asset, AssetType, Model3DData, CodeData)
-- [ ] T005 [P] Add GLTFLoader and OBJLoader imports from `three/examples/jsm/loaders/` in `src/services/ModelLoader.ts`
+- [X] T001 Install dependencies: `idb`, `@monaco-editor/react`, `@babel/standalone`, install with `npm install idb @monaco-editor/react @babel/standalone`
+- [X] T002 Configure Vite for Monaco Editor workers in `vite.config.ts` (add worker plugin config)
+- [X] T003 Create IndexedDB schema in `src/services/AssetService.ts` (define stores for assets)
+- [X] T004 Create types in `src/types/assets.ts` (Asset, AssetType, Model3DData, CodeData)
+- [X] T005 [P] Add GLTFLoader and OBJLoader imports from `three/examples/jsm/loaders/` in `src/services/ModelLoader.ts`
 
 ### Phase 2: Foundational (8 tasks - ~2 hours)
 
 Core services and infrastructure needed by all user stories.
 
-- [ ] T006 Implement AssetService with IndexedDB CRUD in `src/services/AssetService.ts` (create, read, update, delete, list)
-- [ ] T007 [P] Implement ThumbnailGenerator service in `src/services/ThumbnailGenerator.ts` (render 3D model to canvas, return data URL)
-- [ ] T008 [P] Implement ModelLoader service in `src/services/ModelLoader.ts` (async load .glb/.gltf with GLTFLoader)
-- [ ] T009 Create asset store with Zustand in `src/state/assetStore.ts` (assets array, selected asset, upload progress)
-- [ ] T010 [P] Register Model3DComponent in ComponentRegistry in `src/core/Model3DComponent.ts`
-- [ ] T011 [P] Register CodeComponent in ComponentRegistry in `src/core/CodeComponent.ts`
-- [ ] T012 [P] Create Web Worker template in `src/workers/codeWorker.ts` (message handler for code execution)
-- [ ] T013 Implement CodeExecutor service in `src/services/CodeExecutor.ts` (transpile, execute in worker, timeout handling)
+- [X] T006 Implement AssetService with IndexedDB CRUD in `src/services/AssetService.ts` (create, read, update, delete, list)
+- [X] T007 [P] Implement ThumbnailGenerator service in `src/services/ThumbnailGenerator.ts` (render 3D model to canvas, return data URL)
+- [X] T008 [P] Implement ModelLoader service in `src/services/ModelLoader.ts` (async load .glb/.gltf with GLTFLoader)
+- [X] T009 Create asset store with Zustand in `src/state/assetStore.ts` (assets array, selected asset, upload progress)
+- [X] T010 [P] Register Model3DComponent in ComponentRegistry in `src/core/Model3DComponent.ts`
+- [X] T011 [P] Register CodeComponent in ComponentRegistry in `src/core/CodeComponent.ts`
+- [X] T012 [P] Create Web Worker template in `src/workers/codeWorker.ts` (message handler for code execution)
+- [X] T013 Implement CodeExecutor service in `src/services/CodeExecutor.ts` (transpile, execute in worker, timeout handling)
 
 ### Phase 3: User Story 1 - Upload and Use 3D Model Asset (18 tasks - ~6 hours)
 
@@ -42,24 +42,24 @@ Enable users to import 3D models and attach them to GameObjects.
 
 **Independent Test**: Upload .glb file → see thumbnail in Assets panel → add GameObject → add Model3D component → select asset → see rendered in viewport.
 
-- [ ] T014 [P] [US1] Create AssetsPanel layout component in `src/components/Assets/AssetsPanel.tsx` (collapsible panel at bottom of editor)
-- [ ] T015 [P] [US1] Create AssetGrid component in `src/components/Assets/AssetGrid.tsx` (grid layout for asset items)
-- [ ] T016 [P] [US1] Create AssetItem component in `src/components/Assets/AssetItem.tsx` (thumbnail, name, size, context menu)
-- [ ] T017 [US1] Create AssetUpload component in `src/components/Assets/AssetUpload.tsx` (drag-drop zone + file input button)
-- [ ] T018 [US1] Implement file validation in AssetUpload (check file extension .glb/.gltf, size < 50MB)
-- [ ] T019 [US1] Implement upload progress indicator in AssetUpload (show progress bar during upload)
-- [ ] T020 [US1] Connect AssetUpload to AssetService.createAsset() (save to IndexedDB)
-- [ ] T021 [US1] Generate thumbnail after upload using ThumbnailGenerator service
-- [ ] T022 [US1] Display uploaded assets in AssetGrid fetched from assetStore
-- [ ] T023 [P] [US1] Create Model3DComponent class in `src/core/Model3DComponent.ts` (assetId, scale properties, loadModel method)
-- [ ] T024 [US1] Implement Model3DComponent.loadModel() using ModelLoader service
-- [ ] T025 [US1] Implement Model3DComponent serialization (assetId, scale to JSON)
-- [ ] T026 [P] [US1] Create Model3DEditor component in `src/components/Inspector/ComponentEditors/Model3DEditor.tsx`
-- [ ] T027 [US1] Add asset dropdown to Model3DEditor (list assets from assetStore filtered by type='model')
-- [ ] T028 [US1] Add scale slider to Model3DEditor (0.1 to 10, default 1.0)
-- [ ] T029 [US1] Integrate Model3DComponent into SceneViewport rendering (replace/extend GameObjectMesh)
-- [ ] T030 [US1] Handle model loading errors in Model3DComponent (corrupted file, unsupported format)
-- [ ] T031 [US1] Add Model3DComponent to ComponentEditor switch statement in `src/components/Inspector/ComponentEditor.tsx`
+- [X] T014 [P] [US1] Create AssetsPanel layout component in `src/components/Assets/AssetsPanel.tsx` (collapsible panel at bottom of editor)
+- [X] T015 [P] [US1] Create AssetGrid component in `src/components/Assets/AssetGrid.tsx` (grid layout for asset items)
+- [X] T016 [P] [US1] Create AssetItem component in `src/components/Assets/AssetItem.tsx` (thumbnail, name, size, context menu)
+- [X] T017 [US1] Create AssetUpload component in `src/components/Assets/AssetUpload.tsx` (drag-drop zone + file input button)
+- [X] T018 [US1] Implement file validation in AssetUpload (check file extension .glb/.gltf, size < 50MB)
+- [X] T019 [US1] Implement upload progress indicator in AssetUpload (show progress bar during upload)
+- [X] T020 [US1] Connect AssetUpload to AssetService.createAsset() (save to IndexedDB)
+- [X] T021 [US1] Generate thumbnail after upload using ThumbnailGenerator service
+- [X] T022 [US1] Display uploaded assets in AssetGrid fetched from assetStore
+- [X] T023 [P] [US1] Create Model3DComponent class in `src/core/Model3DComponent.ts` (assetId, scale properties, loadModel method)
+- [X] T024 [US1] Implement Model3DComponent.loadModel() using ModelLoader service
+- [X] T025 [US1] Implement Model3DComponent serialization (assetId, scale to JSON)
+- [X] T026 [P] [US1] Create Model3DEditor component in `src/components/Inspector/ComponentEditors/Model3DEditor.tsx`
+- [X] T027 [US1] Add asset dropdown to Model3DEditor (list assets from assetStore filtered by type='model')
+- [X] T028 [US1] Add scale slider to Model3DEditor (0.1 to 10, default 1.0)
+- [X] T029 [US1] Integrate Model3DComponent into SceneViewport rendering (replace/extend GameObjectMesh)
+- [X] T030 [US1] Handle model loading errors in Model3DComponent (corrupted file, unsupported format)
+- [X] T031 [US1] Add Model3DComponent to ComponentEditor switch statement in `src/components/Inspector/ComponentEditor.tsx`
 
 **Tests** (if TDD requested):
 - AssetService CRUD operations work with IndexedDB
@@ -119,14 +119,15 @@ Enable users to organize, search, rename, and delete assets.
 
 **Independent Test**: Upload 5 assets → search for name → rename asset → delete unused asset → confirm removal.
 
-- [ ] T055 [P] [US3] Add search input to AssetsPanel in `src/components/Assets/AssetsPanel.tsx`
-- [ ] T056 [US3] Implement search filter in assetStore (filter assets by name matching search query)
-- [ ] T057 [US3] Add asset type filter dropdown in AssetsPanel (All, Models, Scripts)
-- [ ] T058 [US3] Implement rename functionality in AssetItem (double-click to edit, save to AssetService)
-- [ ] T059 [US3] Add delete button to AssetItem context menu
-- [ ] T060 [US3] Implement usage check in AssetService.deleteAsset() (find components referencing asset)
-- [ ] T061 [US3] Show confirmation dialog if asset in use (list GameObjects using it)
-- [ ] T062 [US3] Implement export asset bundle in AssetsPanel (zip all assets, trigger download)
+- [X] T055 [P] [US3] Add search input to AssetsPanel in `src/components/Assets/AssetsPanel.tsx`
+- [X] T056 [US3] Implement search filter in assetStore (filter assets by name matching search query)
+- [X] T057 [US3] Add asset type filter dropdown in AssetsPanel (All, Models, Scripts)
+- [X] T058 [US3] Implement rename functionality in AssetItem (double-click to edit, save to AssetService)
+- [X] T059 [US3] Add delete button to AssetItem context menu
+- [X] T060 [US3] Implement usage check in AssetService.deleteAsset() (find components referencing asset)
+- [X] T061 [US3] Show confirmation dialog if asset in use (list GameObjects using it)
+- [X] T062 [US3] Implement export asset bundle in AssetsPanel (zip all assets, trigger download)
+
 
 **Tests** (if TDD requested):
 - Search filters assets by name in real-time

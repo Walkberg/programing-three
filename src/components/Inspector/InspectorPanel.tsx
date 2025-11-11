@@ -14,6 +14,8 @@ import {
 import { ComponentRegistry } from "@/core/Component";
 import { MeshRenderer } from "@/core/MeshRenderer";
 import { RotationComponent } from "@/core/RotationComponent";
+import { Model3DComponent } from "@/core/Model3DComponent"; // T032
+import { CodeComponent } from "@/core/CodeComponent"; // T032
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -56,6 +58,12 @@ export const InspectorPanel = memo(function InspectorPanel() {
         break;
       case "RotationComponent":
         component = new RotationComponent();
+        break;
+      case "Model3D": // T023
+        component = new Model3DComponent();
+        break;
+      case "Code": // T032
+        component = new CodeComponent();
         break;
       default:
         toast({
