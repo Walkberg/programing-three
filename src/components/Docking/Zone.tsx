@@ -1,5 +1,5 @@
 // Zone Component
-// Feature: 003-docking-panel-system - US3
+// Feature: 003-docking-panel-system - US4
 // Renders leaf zones (panels) and split zones with drop zone support
 
 import React from "react";
@@ -7,7 +7,9 @@ import type { Zone as ZoneType, LeafZone, SplitZone } from "@/types/layout";
 import { Panel } from "./Panel";
 import { TabBar } from "./TabBar";
 import { DropZone } from "./DropZone";
+import { Splitter } from "./Splitter";
 import { useDroppableZone } from "@/hooks/useDragAndDrop";
+import { useLayoutStore } from "@/state/layoutStore";
 
 interface ZoneProps {
   zone: ZoneType;
@@ -45,8 +47,12 @@ const LeafZoneContent = React.memo<{ zone: LeafZone; className: string }>(
       zone.id
     );
 
-    // Always use "tab" mode - dragging always adds panels as tabs
-    const dropMode = "tab";
+    // Get the current drop mode from drag state for visual feedback
+    const dragState = useLayoutStore((state) => state.dragState);
+    const dropMode =
+      dragState?.dropTargetZoneId === zone.id && dragState.dropMode
+        ? dragState.dropMode
+        : "tab";
 
     // No panels: render empty zone
     if (panels.length === 0) {
@@ -117,7 +123,7 @@ const SplitZoneContent = React.memo<{ zone: SplitZone; className: string }>(
     return (
       <div
         className={`flex ${
-          isHorizontal ? "flex-row gap-1" : "flex-col gap-1"
+          isHorizontal ? "flex-row" : "flex-col"
         } w-full h-full overflow-hidden ${className}`}
         data-zone-id={zone.id}
         data-zone-type="split"
@@ -134,6 +140,13 @@ const SplitZoneContent = React.memo<{ zone: SplitZone; className: string }>(
         >
           <Zone zone={children[0]} className="w-full h-full" />
         </div>
+
+        {/* Splitter between zones */}
+        <Splitter
+          zoneId={zone.id}
+          orientation={orientation}
+          currentSizes={sizes}
+        />
 
         {/* Second child */}
         <div

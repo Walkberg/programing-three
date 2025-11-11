@@ -123,20 +123,20 @@
 
 ### Implementation for User Story 4
 
-- [ ] T049 [P] [US4] Detect edge drop zones (split-h, split-v) in useDragAndDrop collision detection
-- [ ] T050 [P] [US4] Show split line indicators in DropZone for edge drops
-- [ ] T051 [P] [US4] Create Splitter component in `src/components/Docking/Splitter.tsx` (draggable divider)
-- [ ] T052 [US4] Implement splitZone action in layoutStore (convert leaf to split with children)
-- [ ] T053 [US4] Update drag end handler to support split modes in DockingLayout
-- [ ] T054 [US4] Render Splitter between child zones in Zone component (for split zones)
-- [ ] T055 [US4] Implement splitter drag logic in Splitter component (updates zone.sizes)
-- [ ] T056 [US4] Add updateZoneSizes action in layoutStore (clamp to 0.1-0.9, normalize to 1.0)
-- [ ] T057 [US4] Apply zone sizes via CSS flex-basis in Zone component
-- [ ] T058 [US4] Add cursor change (col-resize/row-resize) on splitter hover
-- [ ] T059 [US4] Handle minimum zone sizes (200px width, 150px height) in splitter drag
-- [ ] T060 [US4] Test splitting zones horizontally and vertically, resizing with splitter
+- [X] T049 [P] [US4] Detect edge drop zones (split-h, split-v) in useDragAndDrop collision detection
+- [X] T050 [P] [US4] Show split line indicators in DropZone for edge drops
+- [X] T051 [P] [US4] Create Splitter component in `src/components/Docking/Splitter.tsx` (draggable divider)
+- [X] T052 [US4] Implement splitZone action in layoutStore (convert leaf to split with children)
+- [X] T053 [US4] Update drag end handler to support split modes in DockingLayout
+- [X] T054 [US4] Render Splitter between child zones in Zone component (for split zones)
+- [X] T055 [US4] Implement splitter drag logic in Splitter component (updates zone.sizes)
+- [X] T056 [US4] Add updateZoneSizes action in layoutStore (clamp to 0.1-0.9, normalize to 1.0)
+- [X] T057 [US4] Apply zone sizes via CSS flex-basis in Zone component
+- [X] T058 [US4] Add cursor change (col-resize/row-resize) on splitter hover
+- [X] T059 [US4] Handle minimum zone sizes (200px width, 150px height) in splitter drag
+- [X] T060 [US4] Test splitting zones horizontally and vertically, resizing with splitter
 
-**Checkpoint**: Zone splitting fully functional - zones can be split and resized
+**Checkpoint**: ✅ Zone splitting fully functional - zones can be split and resized
 
 ---
 

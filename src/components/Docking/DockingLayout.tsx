@@ -30,7 +30,8 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
     const dragState = useLayoutStore((state) => state.dragState);
     const startDrag = useLayoutStore((state) => state.startDrag);
     const loadLayout = useLayoutStore((state) => state.loadLayout);
-    const { handleDragEnd, handleDragCancel } = useDragEndHandler();
+    const { handleDragMove, handleDragEnd, handleDragCancel } =
+      useDragEndHandler();
 
     // Configure drag sensors
     const sensors = useSensors(
@@ -72,6 +73,7 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
