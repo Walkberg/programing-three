@@ -3,6 +3,7 @@
 
 import { RotateCcw, Save, Settings2 } from "lucide-react";
 import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -41,8 +42,12 @@ export function LayoutManagerPopover() {
   const handleAddPanel = (panelId: string) => {
     const firstLeaf = findFirstLeafZone(rootZone);
     if (firstLeaf) {
+      // Generate unique panel instance ID
+      // Format: panelType-uuid (e.g., "hierarchy-a1b2c3d4")
+      const uniquePanelId = `${panelId}-${uuidv4().slice(0, 8)}` as any;
+      
       // Add panel to the first leaf zone
-      useLayoutStore.getState().addTabToZone(panelId as any, firstLeaf.id);
+      useLayoutStore.getState().addTabToZone(uniquePanelId, firstLeaf.id);
       toast({
         title: "Panel Added",
         description: `${
