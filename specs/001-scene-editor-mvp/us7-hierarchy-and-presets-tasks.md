@@ -46,10 +46,10 @@
 
 **Purpose**: Replace "Add GameObject" button with dropdown menu
 
-- [ ] T116 [US7] Replace "Add GameObject" button in src/components/Editor/Toolbar.tsx with Popover or DropdownMenu component
-- [ ] T117 [P] [US7] Add preset menu items (Empty, Cube, Sphere, Plane, Camera, Light) with appropriate icons (Box, Circle, Grid3x3, etc.)
-- [ ] T118 [US7] Wire preset menu items to sceneStore.createGameObjectFromPreset() action
-- [ ] T119 [US7] Add toast notification for Camera and Light presets ("Camera/Light components coming soon")
+- [x] T116 [US7] Replace "Add GameObject" button in src/components/Editor/Toolbar.tsx with Popover or DropdownMenu component
+- [x] T117 [P] [US7] Add preset menu items (Empty, Cube, Sphere, Plane, Camera, Light) with appropriate icons (Box, Circle, Grid3x3, etc.)
+- [x] T118 [US7] Wire preset menu items to sceneStore.createGameObjectFromPreset() action
+- [x] T119 [US7] Add toast notification for Camera and Light presets ("Camera/Light components coming soon")
 
 **Checkpoint**: Toolbar preset menu functional, can create GameObjects from menu
 

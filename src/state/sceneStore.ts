@@ -140,7 +140,11 @@ interface SceneStore {
   toggleExpanded: (id: string) => void;
   setScene: (gameObjects: GameObjectData[]) => void;
   clear: () => void;
-  // ...existing code...
+  // T110: createGameObjectFromPreset action
+  createGameObjectFromPreset: (
+    presetType: string,
+    parentId?: string | null
+  ) => string | null;
 }
 
 // Helper to mark scene as dirty (T083)

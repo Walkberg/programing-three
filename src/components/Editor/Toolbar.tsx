@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -13,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useSceneStore } from "@/state/sceneStore";
+import { useSceneStore, PRESET_CONFIGS } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import { StorageService } from "@/services/StorageService";
 import { SceneSerializer } from "@/services/SceneSerializer";
@@ -35,7 +41,9 @@ export function Toolbar() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showLoadConfirm, setShowLoadConfirm] = useState(false); // T083
   const { toast } = useToast();
-  const addGameObject = useSceneStore((state) => state.addGameObject);
+  const createGameObjectFromPreset = useSceneStore(
+    (state) => state.createGameObjectFromPreset
+  );
   const gameObjects = useSceneStore((state) => state.gameObjects);
   const setScene = useSceneStore((state) => state.setScene);
   const mode = useEditorStore((state) => state.mode);
@@ -46,10 +54,20 @@ export function Toolbar() {
     (state) => state.setPlayStateSnapshot
   );
 
-  const handleAddGameObject = () => {
-    const id = addGameObject();
-    // Auto-select the new GameObject
-    useEditorStore.getState().selectGameObject(id);
+  const handleAddPreset = (preset: string) => {
+    const id = createGameObjectFromPreset(preset);
+    if (id) {
+      useEditorStore.getState().selectGameObject(id);
+      toast({
+        title: `${PRESET_CONFIGS[preset].name} created`,
+        variant: "default",
+      });
+    } else if (preset === "camera" || preset === "light") {
+      toast({
+        title: `${PRESET_CONFIGS[preset].name} components coming soon`,
+        variant: "default",
+      });
+    }
   };
 
   const handleSave = () => {
@@ -267,17 +285,40 @@ export function Toolbar() {
 
       <div className="h-6 w-px bg-border mx-2" />
 
-      {/* Add GameObject button */}
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={handleAddGameObject}
-        disabled={mode === "play"}
-        className="gap-2"
-      >
-        <Plus className="h-4 w-4" />
-        Add GameObject
-      </Button>
+      {/* Preset DropdownMenu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={mode === "play"}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add GameObject
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom">
+          <DropdownMenuItem onClick={() => handleAddPreset("empty")}>
+            Empty
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("cube")}>
+            Cube
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("sphere")}>
+            Sphere
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("plane")}>
+            Plane
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("camera")}>
+            Camera
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("light")}>
+            Light
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="h-6 w-px bg-border mx-2" />
 
