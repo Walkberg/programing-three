@@ -37,8 +37,17 @@ export interface MeshRendererData extends ComponentData {
 export interface GameObjectData {
   id: string;
   name: string;
-  parent: string | null;
+  parentId: string | null;
+  children: string[];
+  isExpanded?: boolean;
   components: ComponentData[];
+}
+export interface GameObjectPreset {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  defaultComponents: ComponentData[];
 }
 
 export interface SceneData {

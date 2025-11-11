@@ -8,7 +8,7 @@ interface SceneStore {
   gameObjects: GameObjectData[];
   gameObjectMap: Map<string, GameObjectData>;
 
-  addGameObject: (name?: string) => string;
+  addGameObject: (name?: string, parentId?: string | null) => string;
   removeGameObject: (id: string) => void;
   updateGameObject: (id: string, updates: Partial<GameObjectData>) => void;
   updateTransform: (
@@ -24,8 +24,12 @@ interface SceneStore {
     updates: Partial<ComponentData>
   ) => void;
   removeComponent: (gameObjectId: string, componentId: string) => void;
+  setParent: (id: string, newParentId: string | null) => boolean;
+  canSetParent: (id: string, newParentId: string | null) => boolean;
+  toggleExpanded: (id: string) => void;
   setScene: (gameObjects: GameObjectData[]) => void;
   clear: () => void;
+  // ...existing code...
 }
 
 // Helper to mark scene as dirty (T083)
@@ -34,16 +38,97 @@ const markDirty = () => {
 };
 
 export const useSceneStore = create<SceneStore>((set, get) => ({
+  setParent: (id: string, newParentId: string | null) => {
+    const state = get();
+    // Validation: cannot set parent to self or circular
+    if (id === newParentId) return false;
+    if (!state.canSetParent(id, newParentId)) return false;
+
+    set((currentState) => {
+      const go = currentState.gameObjectMap.get(id);
+      if (!go) return {};
+      const oldParentId = go.parentId;
+
+      // Remove from old parent's children
+      if (oldParentId && currentState.gameObjectMap.has(oldParentId)) {
+        const oldParent = currentState.gameObjectMap.get(oldParentId)!;
+        oldParent.children = oldParent.children.filter((cid) => cid !== id);
+      }
+
+      // Add to new parent's children
+      if (newParentId && currentState.gameObjectMap.has(newParentId)) {
+        const newParent = currentState.gameObjectMap.get(newParentId)!;
+        newParent.children = [...newParent.children, id];
+      }
+
+      // Update GameObject's parentId
+      const updatedGameObjects = currentState.gameObjects.map((obj) =>
+        obj.id === id ? { ...obj, parentId: newParentId } : obj
+      );
+      const updatedMap = new Map<string, GameObjectData>();
+      updatedGameObjects.forEach((obj) => updatedMap.set(obj.id, obj));
+
+      return {
+        gameObjects: updatedGameObjects,
+        gameObjectMap: updatedMap,
+      };
+    });
+    markDirty();
+    return true;
+  },
+
+  canSetParent: (id: string, newParentId: string | null) => {
+    if (!newParentId) return true;
+    if (id === newParentId) return false;
+    const state = get();
+    // Traverse up the parent chain to detect circular dependency
+    let currentId: string | null = newParentId;
+    while (currentId) {
+      if (currentId === id) return false;
+      const go = state.gameObjectMap.get(currentId);
+      currentId = go?.parentId ?? null;
+    }
+    return true;
+  },
+
+  toggleExpanded: (id: string) => {
+    set((state) => {
+      const go = state.gameObjectMap.get(id);
+      if (!go) return {};
+      const updatedGo = { ...go, isExpanded: !go.isExpanded };
+      const updatedGameObjects = state.gameObjects.map((obj) =>
+        obj.id === id ? updatedGo : obj
+      );
+      const updatedMap = new Map<string, GameObjectData>();
+      updatedGameObjects.forEach((obj) => updatedMap.set(obj.id, obj));
+      return {
+        gameObjects: updatedGameObjects,
+        gameObjectMap: updatedMap,
+      };
+    });
+    markDirty();
+  },
   gameObjects: [],
   gameObjectMap: new Map(),
 
-  addGameObject: (name) => {
+  addGameObject: (name, parentId = null) => {
     const gameObject = new GameObject({ name });
     const data = gameObject.serialize();
+    // US7: Add hierarchy fields
+    data.parentId = parentId;
+    data.children = [];
+    data.isExpanded = true;
 
     set((state) => {
       const newMap = new Map(state.gameObjectMap);
       newMap.set(data.id, data);
+
+      // If parentId is set, add to parent's children
+      if (parentId && newMap.has(parentId)) {
+        const parent = newMap.get(parentId)!;
+        parent.children = [...parent.children, data.id];
+        newMap.set(parentId, parent);
+      }
 
       return {
         gameObjects: [...state.gameObjects, data],
@@ -57,8 +142,28 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
 
   removeGameObject: (id) => {
     set((state) => {
+      // Remove GameObject and its children recursively
+      const removeIds = new Set<string>();
+      const collectChildren = (goId: string) => {
+        removeIds.add(goId);
+        const go = state.gameObjectMap.get(goId);
+        if (go && go.children) {
+          go.children.forEach(collectChildren);
+        }
+      };
+      collectChildren(id);
+
+      // Remove from parent's children
+      const gameObject = state.gameObjectMap.get(id);
+      if (gameObject && gameObject.parentId) {
+        const parent = state.gameObjectMap.get(gameObject.parentId);
+        if (parent) {
+          parent.children = parent.children.filter((cid) => cid !== id);
+        }
+      }
+
       const newGameObjects = state.gameObjects.filter(
-        (go) => go.id !== id && go.parent !== id
+        (go) => !removeIds.has(go.id)
       );
       const newMap = new Map<string, GameObjectData>();
       newGameObjects.forEach((go) => newMap.set(go.id, go));
@@ -79,6 +184,23 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       );
       const newMap = new Map<string, GameObjectData>();
       newGameObjects.forEach((go) => newMap.set(go.id, go));
+
+      // If parentId changed, update parent/children relationships
+      if ("parentId" in updates) {
+        const oldGo = state.gameObjectMap.get(id);
+        const oldParentId = oldGo?.parentId;
+        const newParentId = updates.parentId;
+        if (oldParentId && newMap.has(oldParentId)) {
+          const oldParent = newMap.get(oldParentId)!;
+          oldParent.children = oldParent.children.filter((cid) => cid !== id);
+          newMap.set(oldParentId, oldParent);
+        }
+        if (newParentId && newMap.has(newParentId)) {
+          const newParent = newMap.get(newParentId)!;
+          newParent.children = [...newParent.children, id];
+          newMap.set(newParentId, newParent);
+        }
+      }
 
       return {
         gameObjects: newGameObjects,
