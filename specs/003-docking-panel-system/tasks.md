@@ -165,26 +165,59 @@
 
 ---
 
-## Phase 8: Polish & Cross-Cutting Concerns
+## Phase 8: User Story 6 - Layout Presets Manager (Priority: P6)
+
+**Goal**: Enable users to save, manage, and load multiple layout presets for different workflows
+
+**Independent Test**: Open Layout Manager, save layout as "Coding Setup", modify layout, load preset, verify it restores
+
+### Implementation for User Story 6
+
+- [ ] T089 [P] [US6] Extend LayoutSerializer to handle multiple named presets in `src/services/LayoutSerializer.ts`
+- [ ] T090 [P] [US6] Add layout preset management actions to layoutStore in `src/state/layoutStore.ts` (savePreset, loadPreset, deletePreset, renamePreset, listPresets)
+- [ ] T091 [P] [US6] Create default preset layouts in `src/state/layoutStore.ts` (Default, Code Focus, Design Mode)
+- [ ] T092 [US6] Create LayoutManagerPopover component in `src/components/Docking/LayoutManagerPopover.tsx` (popover with sections)
+- [ ] T093 [US6] Create PresetList component in `src/components/Docking/PresetList.tsx` (displays presets with click handlers)
+- [ ] T094 [US6] Create SaveLayoutDialog component in `src/components/Docking/SaveLayoutDialog.tsx` (name input dialog)
+- [ ] T095 [US6] Add Layout Manager button to Toolbar in `src/components/Editor/Toolbar.tsx` (LayoutGrid icon, opens popover)
+- [ ] T096 [US6] Implement preset loading with confirmation if unsaved changes
+- [ ] T097 [US6] Add preset rename functionality with inline editing or dialog
+- [ ] T098 [US6] Add preset delete functionality with confirmation dialog
+- [ ] T099 [US6] Add toast notifications for all preset operations (saved, loaded, deleted, renamed)
+- [ ] T100 [US6] Style LayoutManagerPopover with sections: Default Presets, Saved Layouts, Actions
+- [ ] T101 [US6] Add preset metadata (name, timestamp, preview?) to localStorage
+- [ ] T102 [US6] Test preset workflow: save multiple presets, load each, verify correct layout restored
+
+**Checkpoint**: Layout presets fully functional - users can save and manage multiple workflow-specific layouts
+
+---
+
+## Phase 9: Polish & Cross-Cutting Concerns
+
+**Checkpoint**: Layout presets fully functional - users can save and manage multiple workflow-specific layouts
+
+---
+
+## Phase 9: Polish & Cross-Cutting Concerns
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T073 [P] Add comprehensive error handling (invalid panel IDs, corrupted layouts)
-- [ ] T074 [P] Add unit tests for layoutStore actions in `tests/unit/layoutStore.test.ts`
-- [ ] T075 [P] Add unit tests for LayoutSerializer in `tests/unit/LayoutSerializer.test.ts`
-- [ ] T076 Add component tests for drag interactions in `tests/component/DockingLayout.test.tsx`
-- [ ] T077 [P] Add component tests for tab switching in `tests/component/TabBar.test.tsx`
-- [ ] T078 [P] Add component tests for zone rendering in `tests/component/Zone.test.tsx`
-- [ ] T079 Add E2E tests for complete docking workflow in `tests/e2e/docking-workflow.spec.ts`
-- [ ] T080 Add Zod validation schemas for Layout, Zone, Panel types in `src/types/layout.ts`
-- [ ] T081 Optimize performance with React.memo on all docking components
-- [ ] T082 Add FPS monitoring during drag operations (reuse PerformanceMonitor)
-- [ ] T083 [P] Document docking system API in `specs/003-docking-panel-system/quickstart.md`
-- [ ] T084 Add accessibility attributes (aria-labels) to panel headers and tabs
-- [ ] T085 Ensure minimum panel sizes enforced (200px x 150px)
-- [ ] T086 Test responsive behavior with small browser windows
-- [ ] T087 Code cleanup and refactoring of docking components
-- [ ] T088 Run full test suite and verify all acceptance criteria pass
+- [ ] T103 [P] Add comprehensive error handling (invalid panel IDs, corrupted layouts)
+- [ ] T104 [P] Add unit tests for layoutStore actions in `tests/unit/layoutStore.test.ts`
+- [ ] T105 [P] Add unit tests for LayoutSerializer in `tests/unit/LayoutSerializer.test.ts`
+- [ ] T106 Add component tests for drag interactions in `tests/component/DockingLayout.test.tsx`
+- [ ] T107 [P] Add component tests for tab switching in `tests/component/TabBar.test.tsx`
+- [ ] T108 [P] Add component tests for zone rendering in `tests/component/Zone.test.tsx`
+- [ ] T109 Add E2E tests for complete docking workflow in `tests/e2e/docking-workflow.spec.ts`
+- [ ] T110 Add Zod validation schemas for Layout, Zone, Panel types in `src/types/layout.ts`
+- [ ] T111 Optimize performance with React.memo on all docking components
+- [ ] T112 Add FPS monitoring during drag operations (reuse PerformanceMonitor)
+- [ ] T113 [P] Document docking system API in `specs/003-docking-panel-system/quickstart.md`
+- [ ] T114 Add accessibility attributes (aria-labels) to panel headers and tabs
+- [ ] T115 Ensure minimum panel sizes enforced (200px x 150px)
+- [ ] T116 Test responsive behavior with small browser windows
+- [ ] T117 Code cleanup and refactoring of docking components
+- [ ] T118 Run full test suite and verify all acceptance criteria pass
 
 ---
 
@@ -199,8 +232,10 @@
   - User Story 2 (Drag): Can start after US1 (needs Zone components)
   - User Story 3 (Tabs): Can start after US2 (needs drag functionality)
   - User Story 4 (Splits): Can start after US2 (needs drag functionality), independent of US3
+  - User Story 4 (Splits): Can start after US2 (needs drag functionality), independent of US3
   - User Story 5 (Persist): Can start after US1 (needs layout structure), works with any layout
-- **Polish (Phase 8)**: Depends on all desired user stories being complete
+  - User Story 6 (Presets): Can start after US5 (needs persistence), independent of US2-4
+- **Polish (Phase 9)**: Depends on all desired user stories being complete
 
 ### User Story Dependencies
 
@@ -209,6 +244,7 @@
 - **User Story 3 (P3)**: Depends on US2 completion (needs drag system)
 - **User Story 4 (P4)**: Depends on US2 completion (needs drag system), independent of US3
 - **User Story 5 (P5)**: Depends on US1 completion (needs layout structure), can work with partial features
+- **User Story 6 (P6)**: Depends on US5 completion (needs persistence infrastructure), independent of drag/split features
 
 ### Within Each User Story
 
@@ -217,6 +253,7 @@
 - **US3**: Tab detection → addTabToZone → setActiveTab → tab rendering
 - **US4**: Split detection → splitZone → Splitter → resize logic
 - **US5**: Serialization → saveLayout → loadLayout → reset → migration
+- **US6**: Preset storage → LayoutManager UI → PresetList → SaveDialog → Actions
 
 ### Parallel Opportunities
 
@@ -227,7 +264,8 @@
 - **US3**: T037, T038 can run in parallel
 - **US4**: T049, T050, T051 can run in parallel initially
 - **US5**: T061, T062 can run in parallel
-- **Polish**: T073, T074, T075, T077, T078, T083 can run in parallel
+- **US6**: T089, T090, T091 can run in parallel initially; T092, T093, T094 can run in parallel after T089/T090
+- **Polish**: T103, T104, T105, T107, T108, T113 can run in parallel
 
 ---
 
@@ -270,6 +308,7 @@ Task: "Update EditorLayout to use DockingLayout"
 4. **Tabs** (Phase 5) → Space-efficient layout (advanced organization)
 5. **Splits** (Phase 6) → Complex layouts (power user feature)
 6. **Persistence** (Phase 7) → Layout survives restarts (quality of life)
+7. **Presets** (Phase 8) → Multiple workflow layouts (advanced workflow optimization)
 
 ### Parallel Team Strategy
 
@@ -283,6 +322,8 @@ With multiple developers after Foundational phase:
 4. After US2 completes:
    - **Developer A**: User Story 3 (Tabs)
    - **Developer C**: User Story 4 (Splits) - Independent of tabs
+5. After US5 completes:
+   - **Developer B**: User Story 6 (Presets) - Builds on persistence
 
 ---
 
@@ -295,5 +336,7 @@ With multiple developers after Foundational phase:
 - Stop at any checkpoint to validate story independently
 - US1 must be complete before US2 (drag needs zones to exist)
 - US2 must be complete before US3 and US4 (both need drag system)
+- US5 must be complete before US6 (presets need persistence)
+- US6 is independent of US2-4 (doesn't need drag/split features)
 - US5 can start early (only needs layout structure, not drag)
 - Zone splitting (US4) and tabbing (US3) are independent of each other

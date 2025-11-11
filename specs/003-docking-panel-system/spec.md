@@ -97,6 +97,28 @@ A user customizes their workspace layout and closes the editor. When they return
 
 ---
 
+### User Story 6 - Layout Presets Manager (Priority: P6)
+
+A user wants to save and manage multiple layout configurations (presets) for different workflows. They can access a Layout Manager from the toolbar, see all available preset layouts, save their current layout as a new preset, load any saved preset, and reset to the default layout.
+
+**Why this priority**: Advanced workflow optimization. Allows users to have different layouts for different tasks (e.g., "Coding", "Design", "Testing"). Builds on persistence from Story 5.
+
+**Independent Test**: Open Layout Manager from toolbar, save current layout as "My Coding Setup", modify layout, load the saved preset, verify original layout is restored.
+
+**Acceptance Scenarios**:
+
+1. **Given** the toolbar is displayed, **When** user clicks the Layout Manager button, **Then** a popover opens showing layout management options
+2. **Given** the Layout Manager is open, **When** user views the preset section, **Then** they see a list of default preset layouts (e.g., "Default", "Code Focus", "Design Mode")
+3. **Given** the Layout Manager is open, **When** user clicks on a preset layout, **Then** the editor applies that layout configuration immediately
+4. **Given** the Layout Manager is open, **When** user views the saved layouts section, **Then** they see all their custom saved layout presets with names and dates
+5. **Given** user has a custom layout, **When** user clicks "Save Layout" in the manager, **Then** a dialog prompts for a preset name and saves the current configuration
+6. **Given** user has saved layouts, **When** user clicks on a saved layout, **Then** that custom layout is applied to the editor
+7. **Given** user has saved layouts, **When** user right-clicks or hovers on a saved layout, **Then** they can delete or rename the preset
+8. **Given** the Layout Manager is open, **When** user clicks "Reset Layout", **Then** the editor returns to the default layout configuration
+9. **Given** any layout operation occurs, **When** the operation completes, **Then** a toast notification confirms the action (loaded, saved, deleted, reset)
+
+---
+
 ### Edge Cases
 
 - What happens when user tries to close the last remaining panel? (Should prevent - at least one panel must be visible)
