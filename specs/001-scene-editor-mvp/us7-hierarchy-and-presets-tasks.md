@@ -59,12 +59,12 @@
 
 **Purpose**: Update HierarchyPanel to show parent-child relationships
 
-- [ ] T120 [US7] Update GameObjectItem in src/components/Hierarchy/GameObjectItem.tsx to accept depth prop and apply indentation (paddingLeft: depth * 16px)
-- [ ] T121 [US7] Add chevron icon (ChevronRight/ChevronDown from lucide-react) before GameObject name, visible only if children exist
-- [ ] T122 [US7] Implement chevron click handler to call sceneStore.toggleExpanded()
-- [ ] T123 [US7] Update HierarchyPanel in src/components/Hierarchy/HierarchyPanel.tsx to recursively render child GameObjects when parent is expanded
-- [ ] T124 [US7] Add getGameObjectHierarchy helper to filter top-level GameObjects (parentId === null) and recursively build tree structure
-- [ ] T125 [US7] Update HierarchyPanel to hide children when parent isExpanded === false
+ - [x] T120 [US7] Update GameObjectItem in src/components/Hierarchy/GameObjectItem.tsx to accept depth prop and apply indentation (paddingLeft: depth * 16px)
+ - [x] T121 [US7] Add chevron icon (ChevronRight/ChevronDown from lucide-react) before GameObject name, visible only if children exist
+ - [x] T122 [US7] Implement chevron click handler to call sceneStore.toggleExpanded()
+ - [x] T123 [US7] Update HierarchyPanel in src/components/Hierarchy/HierarchyPanel.tsx to recursively render child GameObjects when parent is expanded
+ - [x] T124 [US7] Add getGameObjectHierarchy helper to filter top-level GameObjects (parentId === null) and recursively build tree structure
+ - [x] T125 [US7] Update HierarchyPanel to hide children when parent isExpanded === false
 
 **Checkpoint**: Hierarchy visually displays parent-child relationships with expand/collapse
 
