@@ -1,3 +1,114 @@
+// Phase 2: GameObject Presets System
+// T109: PRESET_CONFIGS constant
+export const PRESET_CONFIGS: Record<
+  string,
+  { name: string; components: ComponentData[] }
+> = {
+  empty: {
+    name: "Empty",
+    components: [
+      {
+        id: "transform",
+        type: "Transform",
+        enabled: true,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+    ],
+  },
+  cube: {
+    name: "Cube",
+    components: [
+      {
+        id: "transform",
+        type: "Transform",
+        enabled: true,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+      {
+        id: "meshRenderer",
+        type: "MeshRenderer",
+        enabled: true,
+        geometry: "cube",
+        color: "#cccccc",
+        visible: true,
+      },
+    ],
+  },
+  sphere: {
+    name: "Sphere",
+    components: [
+      {
+        id: "transform",
+        type: "Transform",
+        enabled: true,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+      {
+        id: "meshRenderer",
+        type: "MeshRenderer",
+        enabled: true,
+        geometry: "sphere",
+        color: "#cccccc",
+        visible: true,
+      },
+    ],
+  },
+  plane: {
+    name: "Plane",
+    components: [
+      {
+        id: "transform",
+        type: "Transform",
+        enabled: true,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+      {
+        id: "meshRenderer",
+        type: "MeshRenderer",
+        enabled: true,
+        geometry: "plane",
+        color: "#cccccc",
+        visible: true,
+      },
+    ],
+  },
+  camera: {
+    name: "Camera",
+    components: [
+      {
+        id: "transform",
+        type: "Transform",
+        enabled: true,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+      // Camera component placeholder
+    ],
+  },
+  light: {
+    name: "Light",
+    components: [
+      {
+        id: "transform",
+        type: "Transform",
+        enabled: true,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+      },
+      // Light component placeholder
+    ],
+  },
+};
 import { create } from "zustand";
 import { GameObject } from "@/core/GameObject";
 import { Component } from "@/core/Component";
@@ -38,6 +149,30 @@ const markDirty = () => {
 };
 
 export const useSceneStore = create<SceneStore>((set, get) => ({
+  // T110: createGameObjectFromPreset action
+  createGameObjectFromPreset: (
+    presetType: string,
+    parentId?: string | null
+  ) => {
+    const config = PRESET_CONFIGS[presetType];
+    if (!config) return null;
+    // T115: Camera/Light placeholder
+    if (presetType === "camera" || presetType === "light") {
+      console.warn(`${config.name} components coming soon`);
+      return null;
+    }
+    // T111: Empty preset auto-increment naming
+    let name = config.name;
+    if (presetType === "empty") {
+      const state = get();
+      const count = state.gameObjects.filter((go) =>
+        go.name.startsWith("Empty")
+      ).length;
+      name = count === 0 ? "Empty" : `Empty (${count + 1})`;
+    }
+    // Add GameObject
+    return get().addGameObject(name, parentId);
+  },
   setParent: (id: string, newParentId: string | null) => {
     const state = get();
     // Validation: cannot set parent to self or circular

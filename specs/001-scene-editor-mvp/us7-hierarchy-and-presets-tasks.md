@@ -30,13 +30,13 @@
 
 **Purpose**: Define preset configurations and creation logic
 
-- [ ] T109 [P] [US7] Create PRESET_CONFIGS constant in src/state/sceneStore.ts mapping preset types to component configurations
-- [ ] T110 [US7] Implement createGameObjectFromPreset action in src/state/sceneStore.ts accepting preset type and optional parentId
-- [ ] T111 [US7] Add Empty preset config (only Transform component) with auto-increment naming
-- [ ] T112 [P] [US7] Add Cube preset config (Transform + MeshRenderer with cube geometry, default color)
-- [ ] T113 [P] [US7] Add Sphere preset config (Transform + MeshRenderer with sphere geometry, default color)
-- [ ] T114 [P] [US7] Add Plane preset config (Transform + MeshRenderer with plane geometry, default color)
-- [ ] T115 [P] [US7] Add Camera and Light preset configs (placeholder - show toast "Coming Soon" when selected)
+- [x] T109 [P] [US7] Create PRESET_CONFIGS constant in src/state/sceneStore.ts mapping preset types to component configurations
+- [x] T110 [US7] Implement createGameObjectFromPreset action in src/state/sceneStore.ts accepting preset type and optional parentId
+- [x] T111 [US7] Add Empty preset config (only Transform component) with auto-increment naming
+- [x] T112 [P] [US7] Add Cube preset config (Transform + MeshRenderer with cube geometry, default color)
+- [x] T113 [P] [US7] Add Sphere preset config (Transform + MeshRenderer with sphere geometry, default color)
+- [x] T114 [P] [US7] Add Plane preset config (Transform + MeshRenderer with plane geometry, default color)
+- [x] T115 [P] [US7] Add Camera and Light preset configs (placeholder - show toast "Coming Soon" when selected)
 
 **Checkpoint**: Preset system ready, can create GameObjects from templates
 
