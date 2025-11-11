@@ -27,7 +27,7 @@ export function SaveLayoutDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
-  
+
   const { savePreset, listPresets } = useLayoutStore();
 
   const handleSave = () => {
@@ -52,7 +52,7 @@ export function SaveLayoutDialog({
 
     // Save preset
     const success = savePreset(name.trim(), description.trim() || undefined);
-    
+
     if (success) {
       // Reset form and close
       setName("");
@@ -99,15 +99,11 @@ export function SaveLayoutDialog({
               }}
               autoFocus
             />
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="preset-description">
-              Description (Optional)
-            </Label>
+            <Label htmlFor="preset-description">Description (Optional)</Label>
             <Input
               id="preset-description"
               placeholder="Describe this layout..."

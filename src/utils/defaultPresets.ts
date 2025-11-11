@@ -68,7 +68,6 @@ function createDefaultPreset(): LayoutPreset {
   return {
     id: "default",
     name: "Default Layout",
-    description: "Balanced workspace with all panels visible",
     isDefault: true,
     timestamp: Date.now(),
     layout,
@@ -139,7 +138,6 @@ function createCodeFocusPreset(): LayoutPreset {
   return {
     id: "code-focus",
     name: "Code Focus",
-    description: "Large inspector panel for code editing, compact hierarchy and viewport",
     isDefault: true,
     timestamp: Date.now(),
     layout,
@@ -178,7 +176,6 @@ function createDesignModePreset(): LayoutPreset {
   return {
     id: "design-mode",
     name: "Design Mode",
-    description: "Large viewport for visual design, all other panels tabbed on the side",
     isDefault: true,
     timestamp: Date.now(),
     layout,
@@ -207,7 +204,7 @@ export function initializeDefaultPresets(): void {
   try {
     const stored = localStorage.getItem("layout-presets");
     const existingPresets = stored ? JSON.parse(stored) : {};
-    
+
     const defaults = getDefaultPresets();
     let updated = false;
 

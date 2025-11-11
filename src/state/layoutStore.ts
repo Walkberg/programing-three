@@ -426,15 +426,12 @@ export const useLayoutStore = create<LayoutStore>()(
           try {
             LayoutSerializer.validateZoneTree(preset.layout);
           } catch (error) {
-            console.error(
-              "[LayoutStore] Invalid preset layout:",
-              id,
-              error
-            );
+            console.error("[LayoutStore] Invalid preset layout:", id, error);
 
             toast({
               title: "Invalid Preset",
-              description: "This preset contains invalid data. Using default layout.",
+              description:
+                "This preset contains invalid data. Using default layout.",
               variant: "destructive",
             });
 

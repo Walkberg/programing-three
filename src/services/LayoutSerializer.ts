@@ -2,7 +2,12 @@
 // Feature: 003-docking-panel-system
 // Handles serialization, deserialization, and validation of layout state
 
-import type { Zone, SerializedLayout, PanelType, LayoutPreset } from "@/types/layout";
+import type {
+  Zone,
+  SerializedLayout,
+  PanelType,
+  LayoutPreset,
+} from "@/types/layout";
 import { getDefaultLayout } from "@/state/layoutStore";
 
 /**

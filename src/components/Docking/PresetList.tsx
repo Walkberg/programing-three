@@ -106,7 +106,9 @@ export function PresetList({
     return (
       <div className="text-center py-8 text-muted-foreground">
         <p>No presets found</p>
-        <p className="text-sm mt-2">Save your first layout preset to get started</p>
+        <p className="text-sm mt-2">
+          Save your first layout preset to get started
+        </p>
       </div>
     );
   }
@@ -144,11 +146,6 @@ export function PresetList({
                         <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
                       )}
                     </div>
-                    {preset.description && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {preset.description}
-                      </p>
-                    )}
                     <p className="text-xs text-muted-foreground">
                       {formatTimestamp(preset.timestamp)}
                     </p>
@@ -172,9 +169,7 @@ export function PresetList({
 
               {!isBuiltIn && (
                 <ContextMenuContent>
-                  <ContextMenuItem
-                    onClick={() => onPresetLoad(preset.id)}
-                  >
+                  <ContextMenuItem onClick={() => onPresetLoad(preset.id)}>
                     <Check className="h-4 w-4 mr-2" />
                     Load Preset
                   </ContextMenuItem>

@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
-import { useLayoutStore } from "@/state/layoutStore";
 import { StorageService } from "@/services/StorageService";
 import { SceneSerializer } from "@/services/SceneSerializer";
 import { Scene } from "@/core/Scene";
@@ -27,7 +26,6 @@ import {
   FolderOpen,
   Loader2,
   Keyboard,
-  LayoutGrid,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -47,7 +45,6 @@ export function Toolbar() {
   const setPlayStateSnapshot = useEditorStore(
     (state) => state.setPlayStateSnapshot
   );
-  const resetLayout = useLayoutStore((state) => state.resetLayout);
 
   const handleAddGameObject = () => {
     const id = addGameObject();
@@ -311,18 +308,6 @@ export function Toolbar() {
 
       {/* Layout Manager Popover (US6) */}
       <LayoutManagerPopover />
-
-      {/* Reset Layout button (US5) */}
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={resetLayout}
-        disabled={mode === "play"}
-        className="gap-2"
-      >
-        <LayoutGrid className="h-4 w-4" />
-        Reset Layout
-      </Button>
 
       {/* Keyboard Shortcuts Tooltip (T081) */}
       <div className="ml-auto">
