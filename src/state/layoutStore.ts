@@ -9,9 +9,10 @@ import type {
   SplitZone,
   PanelType,
   LayoutStore,
-  SerializedLayout,
 } from "@/types/layout";
 import { v4 as uuidv4 } from "uuid";
+import { LayoutSerializer } from "@/services/LayoutSerializer";
+import { toast } from "@/hooks/use-toast";
 
 export function getDefaultLayout(): Zone {
   const topSplitId = uuidv4();
@@ -82,8 +83,17 @@ export const useLayoutStore = create<LayoutStore>()(
 
         setLayout: (zone) => set({ rootZone: zone }),
 
-        resetLayout: () =>
-          set({ rootZone: getDefaultLayout(), dragState: null }),
+        resetLayout: () => {
+          set({ rootZone: getDefaultLayout(), dragState: null });
+
+          // Clear saved layout from storage
+          LayoutSerializer.clear();
+
+          toast({
+            title: "Layout Reset",
+            description: "Workspace layout has been reset to default.",
+          });
+        },
 
         startDrag: (panelId, zoneId) =>
           set({
@@ -319,16 +329,48 @@ export const useLayoutStore = create<LayoutStore>()(
 
         saveLayout: () => {
           const { rootZone } = get();
-          const layout: SerializedLayout = {
-            version: "1.0.0",
-            rootZone,
-            timestamp: Date.now(),
-          };
-          return layout;
+          const success = LayoutSerializer.save(rootZone);
+
+          if (success) {
+            toast({
+              title: "Layout Saved",
+              description: "Your workspace layout has been saved successfully.",
+            });
+          } else {
+            toast({
+              title: "Save Failed",
+              description: "Failed to save layout. Please try again.",
+              variant: "destructive",
+            });
+          }
+
+          return success;
         },
 
         loadLayout: () => {
-          // Auto-loaded by persist middleware
+          try {
+            const loadedZone = LayoutSerializer.load();
+            set({ rootZone: loadedZone });
+
+            toast({
+              title: "Layout Loaded",
+              description: "Your workspace layout has been restored.",
+            });
+
+            return true;
+          } catch (error) {
+            console.error("[LayoutStore] Failed to load layout:", error);
+
+            toast({
+              title: "Load Failed",
+              description: "Failed to load layout. Using default layout.",
+              variant: "destructive",
+            });
+
+            // Fall back to default
+            set({ rootZone: getDefaultLayout() });
+            return false;
+          }
         },
       }),
       {

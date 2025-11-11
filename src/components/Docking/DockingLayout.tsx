@@ -13,6 +13,7 @@ import {
 import { useLayoutStore } from "@/state/layoutStore";
 import { Zone } from "./Zone";
 import { useDragEndHandler } from "@/hooks/useDragAndDrop";
+import { useAutoSaveLayout } from "@/hooks/useAutoSaveLayout";
 import { getPanelDefinition } from "./PanelRegistry";
 
 interface DockingLayoutProps {
@@ -32,6 +33,9 @@ export const DockingLayout = React.memo<DockingLayoutProps>(
     const loadLayout = useLayoutStore((state) => state.loadLayout);
     const { handleDragMove, handleDragEnd, handleDragCancel } =
       useDragEndHandler();
+
+    // Auto-save layout changes with 500ms debounce
+    useAutoSaveLayout(500);
 
     // Configure drag sensors
     const sensors = useSensors(

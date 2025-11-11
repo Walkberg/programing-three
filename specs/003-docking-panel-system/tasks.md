@@ -148,17 +148,17 @@
 
 ### Implementation for User Story 5
 
-- [ ] T061 [P] [US5] Implement serialize method in LayoutSerializer (Layout to JSON)
-- [ ] T062 [P] [US5] Implement deserialize method in LayoutSerializer (JSON to Layout with validation)
-- [ ] T063 [US5] Add saveLayout action in layoutStore (calls LayoutSerializer + StorageService)
-- [ ] T064 [US5] Add loadLayout action in layoutStore (loads from storage, validates, applies)
-- [ ] T065 [US5] Debounce saveLayout calls (500ms) in layoutStore after layout changes
-- [ ] T066 [US5] Call loadLayout on app initialization in `src/main.tsx` or EditorLayout
-- [ ] T067 [US5] Add "Reset Layout" button in Toolbar or settings menu
-- [ ] T068 [US5] Implement resetLayout action in layoutStore (resets to default layout)
-- [ ] T069 [US5] Add layout migration logic in LayoutSerializer (version check)
-- [ ] T070 [US5] Handle invalid saved layouts (fall back to default)
-- [ ] T071 [US5] Add toast notifications for successful save/load/reset
+- [X] T061 [P] [US5] Implement serialize method in LayoutSerializer (Layout to JSON)
+- [X] T062 [P] [US5] Implement deserialize method in LayoutSerializer (JSON to Layout with validation)
+- [X] T063 [US5] Add saveLayout action in layoutStore (calls LayoutSerializer + StorageService)
+- [X] T064 [US5] Add loadLayout action in layoutStore (loads from storage, validates, applies)
+- [X] T065 [US5] Debounce saveLayout calls (500ms) in layoutStore after layout changes
+- [X] T066 [US5] Call loadLayout on app initialization in `src/main.tsx` or EditorLayout
+- [X] T067 [US5] Add "Reset Layout" button in Toolbar or settings menu
+- [X] T068 [US5] Implement resetLayout action in layoutStore (resets to default layout)
+- [X] T069 [US5] Add layout migration logic in LayoutSerializer (version check)
+- [X] T070 [US5] Handle invalid saved layouts (fall back to default)
+- [X] T071 [US5] Add toast notifications for successful save/load/reset
 - [ ] T072 [US5] Test persistence: save, reload, verify layout matches
 
 **Checkpoint**: Layout persistence fully functional - custom layouts survive browser restarts
