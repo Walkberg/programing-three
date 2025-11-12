@@ -15,4 +15,3 @@ export {
   getAllPanelDefinitions,
   isValidPanelType,
 } from "./PanelRegistry";
-export type { PanelDefinition } from "./PanelRegistry";

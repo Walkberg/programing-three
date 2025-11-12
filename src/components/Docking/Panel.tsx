@@ -3,9 +3,9 @@
 // Wraps panel content with header and provides drag functionality
 
 import React from "react";
-import type { PanelType } from "@/types/layout";
 import { getPanelDefinition } from "./PanelRegistry";
 import { PanelHeader } from "./PanelHeader";
+import type { PanelType } from "@/core/plugin/plugin.type";
 
 interface PanelProps {
   panelType: PanelType;

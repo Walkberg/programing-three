@@ -2,21 +2,9 @@
 // Feature: 003-docking-panel-system
 // Based on data-model.md and LIBRARY_BEST_PRACTICES.md
 
+import type { PanelType } from "@/core/plugin/plugin.type";
 import { type LucideIcon } from "lucide-react";
 import { type ComponentType } from "react";
-
-/**
- * Panel Types
- * Defines all available panel types in the editor
- */
-export type PanelType =
-  | "hierarchy"
-  | "scene"
-  | "game"
-  | "code"
-  | "inspector"
-  | "console"
-  | "assets";
 
 /**
  * Panel Metadata

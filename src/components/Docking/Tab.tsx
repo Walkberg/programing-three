@@ -3,9 +3,9 @@
 // Individual tab with icon, name, and active state (draggable)
 
 import React from "react";
-import type { PanelType } from "@/types/layout";
 import { getPanelDefinition } from "./PanelRegistry";
 import { useDraggablePanel } from "@/hooks/useDragAndDrop";
+import type { PanelType } from "@/core/plugin/plugin.type";
 
 interface TabProps {
   panelType: PanelType;

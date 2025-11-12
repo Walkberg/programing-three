@@ -12,7 +12,6 @@ import {
   Folder,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { PanelType } from "@/types/layout";
 
 // Import panel components
 import { HierarchyPanel } from "@/components/Hierarchy/HierarchyPanel";
@@ -20,27 +19,16 @@ import { SceneViewport } from "@/components/Viewport/SceneViewport";
 import { InspectorPanel } from "@/components/Inspector/InspectorPanel";
 import { ConsolePanel } from "@/components/Console/ConsolePanel";
 import { AssetsPanel } from "@/components/Assets/AssetsPanel";
-
-/**
- * Panel Definition
- * Metadata and component for a panel type
- */
-export interface PanelDefinition {
-  id: PanelType;
-  title: string;
-  icon: LucideIcon;
-  component: React.ComponentType;
-  defaultSize?: { width?: number; height?: number };
-  description?: string;
-}
+import type { PanelDefinition, PanelType } from "@/core/plugin/plugin.type";
 
 /**
  * Panel Registry
  * Central registry mapping panel types to their definitions
  */
-export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
+const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
   hierarchy: {
     id: "hierarchy",
+    pluginId: "core",
     title: "Hierarchy",
     icon: Layers,
     component: HierarchyPanel,
@@ -49,12 +37,14 @@ export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
   },
   scene: {
     id: "scene",
+    pluginId: "core",
     title: "Scene",
     icon: Box,
     component: SceneViewport,
     description: "3D scene viewport for editing",
   },
   game: {
+    pluginId: "core",
     id: "game",
     title: "Game",
     icon: Gamepad2,
@@ -62,6 +52,7 @@ export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
     description: "Game preview viewport",
   },
   code: {
+    pluginId: "core",
     id: "code",
     title: "Code",
     icon: Code,
@@ -69,6 +60,7 @@ export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
     description: "Code editor for scripts",
   },
   inspector: {
+    pluginId: "core",
     id: "inspector",
     title: "Inspector",
     icon: FileText,
@@ -77,6 +69,7 @@ export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
     description: "Component properties editor",
   },
   console: {
+    pluginId: "core",
     id: "console",
     title: "Console",
     icon: Terminal,
@@ -85,6 +78,7 @@ export const PANEL_REGISTRY: Record<PanelType, PanelDefinition> = {
     description: "Log messages and errors",
   },
   assets: {
+    pluginId: "core",
     id: "assets",
     title: "Assets",
     icon: Folder,
