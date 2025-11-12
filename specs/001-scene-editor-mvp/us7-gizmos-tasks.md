@@ -65,6 +65,9 @@
 - [ ] T191 [US4] Handle multi-selection: when multiple GameObjects are selected, attaching gizmo should (a) attach to group-root object, or (b) disable some modes; define behavior and document it (file: src/components/Hierarchy/HierarchyPanel.tsx and SceneViewport.tsx)
 - [ ] T192 [US4] When in Play mode, disable gizmos and show tooltip explaining they are disabled (file: src/components/Viewport/SceneViewport.tsx)
 - [ ] T193 [US4] Accessibility: ensure menu is keyboard navigable and has ARIA labels; provide alternative numeric inputs for precision movement (file: src/components/Viewport/GizmosMenu.tsx)
+ - [x] T191 [US4] Handle multi-selection: when multiple GameObjects are selected, attaching gizmo should (a) attach to group-root object, or (b) disable some modes; define behavior and document it (file: src/components/Hierarchy/HierarchyPanel.tsx and SceneViewport.tsx)
+ - [x] T192 [US4] When in Play mode, disable gizmos and show tooltip explaining they are disabled (file: src/components/Viewport/SceneViewport.tsx)
+ - [x] T193 [US4] Accessibility: ensure menu is keyboard navigable and has ARIA labels; provide alternative numeric inputs for precision movement (file: src/components/Viewport/GizmosMenu.tsx)
 
 ---
 

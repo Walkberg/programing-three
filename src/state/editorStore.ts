@@ -12,6 +12,7 @@ import type {
 interface EditorStore {
   mode: EditorMode;
   selectedId: string | null;
+  selectedIds: string[];
   playStateSnapshot: SceneData | null;
   isDirty: boolean; // T083: Track unsaved changes
 
@@ -35,6 +36,7 @@ interface EditorStore {
 
   setMode: (mode: EditorMode) => void;
   selectGameObject: (id: string | null) => void;
+  setSelection: (ids: string[]) => void;
   setPlayStateSnapshot: (snapshot: SceneData | null) => void;
   setIsDirty: (isDirty: boolean) => void;
 }
@@ -67,7 +69,21 @@ export const useEditorStore = create<EditorStore>((set) => ({
 
   setMode: (mode) => set({ mode }),
 
-  selectGameObject: (id) => set({ selectedId: id }),
+  selectedIds: [],
+
+  selectGameObject: (id) =>
+    set(() => {
+      const ids = id ? [id] : [];
+      return { selectedId: id, selectedIds: ids } as any;
+    }),
+
+  setSelection: (ids) =>
+    set(() => {
+      return {
+        selectedIds: ids,
+        selectedId: ids && ids.length ? ids[0] : null,
+      } as any;
+    }),
 
   setPlayStateSnapshot: (snapshot) => set({ playStateSnapshot: snapshot }),
 

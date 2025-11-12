@@ -248,6 +248,8 @@ const GameObjectRenderer = memo(function GameObjectRenderer() {
 // Gizmo integration inside Canvas: initialize manager and attach to selected object
 function GizmoIntegration() {
   const selectedId = useEditorStore((state) => state.selectedId);
+  const selectedIds = useEditorStore((state) => state.selectedIds);
+  const mode = useEditorStore((s) => s.mode);
   const { scene, camera, gl } = useThree();
   const managerRef = useGizmoManager();
   const manager = managerRef.current;
@@ -257,36 +259,126 @@ function GizmoIntegration() {
   const updateTransform = useSceneStore.getState().updateTransform;
   const pivotMode = useEditorStore((s) => s.pivotMode);
   const beforeTransformsRef = useRef<Record<string, any>>({});
+  const multiDummyRef = useRef<THREE.Object3D | null>(null);
 
   useEffect(() => {
     if (!manager) return;
-    if (!selectedId) {
+    // Disable gizmo in non-edit modes
+    if (mode !== "edit") {
+      // cleanup any multi dummy
+      if (multiDummyRef.current) {
+        try {
+          scene.remove(multiDummyRef.current);
+        } catch (err) {
+          /* ignore */
+        }
+        multiDummyRef.current = null;
+      }
       manager.detach();
       return;
     }
 
-    // Find object by name or userData.gameObjectId
-    let target: THREE.Object3D | null = null;
-    target = scene.getObjectByProperty("name", selectedId) as any;
-    if (!target) {
-      scene.traverse((child) => {
-        if (
-          !target &&
-          child.userData &&
-          child.userData.gameObjectId === selectedId
-        ) {
-          target = child;
+    // Handle no selection
+    if (!selectedIds || selectedIds.length === 0) {
+      if (multiDummyRef.current) {
+        try {
+          scene.remove(multiDummyRef.current);
+        } catch (err) {
+          /* ignore */
         }
-      });
+        multiDummyRef.current = null;
+      }
+      manager.detach();
+      return;
     }
 
-    if (target) {
-      manager.attach(target, selectedId);
-    } else {
+    // Single selection: attach to object
+    if (selectedIds.length === 1) {
+      const id = selectedIds[0];
+      let target: THREE.Object3D | null = null;
+      target = scene.getObjectByProperty("name", id) as any;
+      if (!target) {
+        scene.traverse((child) => {
+          if (!target && child.userData && child.userData.gameObjectId === id) {
+            target = child;
+          }
+        });
+      }
+
+      if (multiDummyRef.current) {
+        try {
+          scene.remove(multiDummyRef.current);
+        } catch (err) {
+          /* ignore */
+        }
+        multiDummyRef.current = null;
+      }
+
+      if (target) {
+        manager.attach(target, id);
+      } else {
+        manager.detach();
+      }
+
+      return;
+    }
+
+    // Multi-selection: attach to invisible dummy at centroid and restrict to translate mode
+    try {
+      const ids = selectedIds;
+      const state = useSceneStore.getState();
+      const positions: THREE.Vector3[] = [];
+      ids.forEach((id) => {
+        const go = state.gameObjectMap.get(id);
+        if (!go) return;
+        const tf = go.components.find((c: any) => c.type === "Transform");
+        if (tf && tf.position)
+          positions.push(
+            new THREE.Vector3(tf.position.x, tf.position.y, tf.position.z)
+          );
+      });
+
+      if (positions.length === 0) {
+        manager.detach();
+        return;
+      }
+
+      const centroid = positions
+        .reduce((acc, p) => acc.add(p), new THREE.Vector3(0, 0, 0))
+        .multiplyScalar(1 / positions.length);
+
+      // create or reuse dummy
+      let dummy = multiDummyRef.current;
+      if (!dummy) {
+        dummy = new THREE.Object3D();
+        dummy.name = "multi-selection-dummy";
+        scene.add(dummy);
+        multiDummyRef.current = dummy;
+      }
+      dummy.position.copy(centroid);
+
+      // enforce translate-only mode for multi-selection
+      try {
+        manager.setMode("translate");
+        // ensure editor store reflects translate mode
+        useEditorStore.getState().setGizmoMode("translate");
+      } catch (err) {
+        // ignore
+      }
+
+      manager.attach(dummy, "multi");
+    } catch (err) {
+      // fallback: detach
+      try {
+        if (multiDummyRef.current) scene.remove(multiDummyRef.current);
+      } catch (e) {
+        /* ignore */
+      }
+      multiDummyRef.current = null;
       manager.detach();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+  }, [selectedIds, manager, mode]);
 
   // Listen for hover and dragging callbacks from the manager and reflect in editor store
   useEffect(() => {
@@ -305,42 +397,101 @@ function GizmoIntegration() {
       }
 
       try {
-        const sel = selectedId;
-        if (!sel) return;
+        const sels = useEditorStore.getState().selectedIds || [];
+        if (!sels || sels.length === 0) return;
 
         if (isDragging) {
-          // drag start: record before transform
-          const go = useSceneStore.getState().gameObjectMap.get(sel);
-          if (go) {
-            const tf = go.components.find((c: any) => c.type === "Transform");
-            beforeTransformsRef.current[sel] = JSON.parse(JSON.stringify(tf));
+          // drag start: record before transform for each selected id
+          const state = useSceneStore.getState();
+          sels.forEach((sel) => {
+            const go = state.gameObjectMap.get(sel);
+            if (go) {
+              const tf = go.components.find((c: any) => c.type === "Transform");
+              beforeTransformsRef.current[sel] = JSON.parse(JSON.stringify(tf));
+            }
+          });
+          // also record dummy before if multi
+          if (sels.length > 1 && multiDummyRef.current) {
+            beforeTransformsRef.current["__multi_dummy"] = {
+              position: multiDummyRef.current.position.clone(),
+            };
           }
         } else {
-          // drag end: record after transform and push entry
-          const before = beforeTransformsRef.current[sel];
-          const go = useSceneStore.getState().gameObjectMap.get(sel);
-          if (go && before) {
-            const after = go.components.find(
-              (c: any) => c.type === "Transform"
-            );
-            const entry = {
-              type: "transform",
-              gameObjectId: sel,
-              before: {
-                position: before.position ?? null,
-                rotation: before.rotation ?? null,
-                scale: before.scale ?? null,
-              },
-              after: {
-                position: after.position ?? null,
-                rotation: after.rotation ?? null,
-                scale: after.scale ?? null,
-              },
-              timestamp: Date.now(),
-              description: "Gizmo transform",
-            };
-            useHistoryStore.getState().push(entry as any);
-            delete beforeTransformsRef.current[sel];
+          // drag end: if multi-selection, compute delta from dummy and apply to all
+          const state = useSceneStore.getState();
+          if (sels.length > 1 && multiDummyRef.current) {
+            const before = beforeTransformsRef.current["__multi_dummy"];
+            if (before) {
+              const afterPos = multiDummyRef.current.position;
+              const dx = (afterPos.x ?? 0) - (before.position.x ?? 0);
+              const dy = (afterPos.y ?? 0) - (before.position.y ?? 0);
+              const dz = (afterPos.z ?? 0) - (before.position.z ?? 0);
+              // apply translation delta to each selected object
+              sels.forEach((sel) => {
+                const go = state.gameObjectMap.get(sel);
+                if (!go) return;
+                const after = go.components.find(
+                  (c: any) => c.type === "Transform"
+                );
+                const beforeTf = beforeTransformsRef.current[sel];
+                if (!beforeTf || !after) return;
+                const newPos = {
+                  x: (beforeTf.position?.x ?? 0) + dx,
+                  y: (beforeTf.position?.y ?? 0) + dy,
+                  z: (beforeTf.position?.z ?? 0) + dz,
+                };
+                useSceneStore
+                  .getState()
+                  .updateTransform(sel, newPos as any, undefined, undefined);
+                const entry = {
+                  type: "transform",
+                  gameObjectId: sel,
+                  before: {
+                    position: beforeTf.position ?? null,
+                    rotation: beforeTf.rotation ?? null,
+                    scale: beforeTf.scale ?? null,
+                  },
+                  after: {
+                    position: newPos ?? null,
+                    rotation: after.rotation ?? null,
+                    scale: after.scale ?? null,
+                  },
+                  timestamp: Date.now(),
+                  description: "Gizmo transform (multi)",
+                };
+                useHistoryStore.getState().push(entry as any);
+                delete beforeTransformsRef.current[sel];
+              });
+            }
+            delete beforeTransformsRef.current["__multi_dummy"];
+          } else {
+            // single selection fallback
+            const sel = sels[0];
+            const before = beforeTransformsRef.current[sel];
+            const go = useSceneStore.getState().gameObjectMap.get(sel);
+            if (go && before) {
+              const after = go.components.find(
+                (c: any) => c.type === "Transform"
+              );
+              const entry = {
+                type: "transform",
+                gameObjectId: sel,
+                before: {
+                  position: before.position ?? null,
+                  rotation: before.rotation ?? null,
+                  scale: before.scale ?? null,
+                },
+                after: {
+                  position: after.position ?? null,
+                  rotation: after.rotation ?? null,
+                  scale: after.scale ?? null,
+                },
+                timestamp: Date.now(),
+                description: "Gizmo transform",
+              };
+              useHistoryStore.getState().push(entry as any);
+              delete beforeTransformsRef.current[sel];
+            }
           }
         }
       } catch (err) {
@@ -841,6 +992,13 @@ export function SceneViewport() {
 
       {/* Render Gizmos Menu overlay */}
       <GizmosMenu />
+
+      {/* When in Play mode, show a small tooltip that gizmos are disabled */}
+      {mode === "play" && (
+        <div className="absolute top-16 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
+          Gizmos are disabled in Play mode
+        </div>
+      )}
 
       {/* Hover tooltip overlay */}
       {hoverHandle && mousePos && (

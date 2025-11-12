@@ -9,6 +9,8 @@ export function GizmosMenu() {
   const gizmoMode = useEditorStore((s) => s.gizmoMode);
   const gizmoSpace = useEditorStore((s) => s.gizmoSpace);
   const gizmoSnap = useEditorStore((s) => s.gizmoSnap);
+  const selectedIds = useEditorStore((s) => s.selectedIds);
+  const mode = useEditorStore((s) => s.mode);
   const setGizmoMode = useEditorStore((s) => s.setGizmoMode);
   const setGizmoSpace = useEditorStore((s) => s.setGizmoSpace);
   const setGizmoSnap = useEditorStore((s) => s.setGizmoSnap);
@@ -30,7 +32,11 @@ export function GizmosMenu() {
   const isDragging = useEditorStore((s) => s.isDragging);
 
   return (
-    <div className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm p-3 rounded shadow-md w-56">
+    <div
+      role="region"
+      aria-label="Gizmos menu"
+      className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm p-3 rounded shadow-md w-56"
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="font-semibold">Gizmos</div>
         <div className="text-xs text-muted-foreground">Mode: {gizmoMode}</div>
@@ -48,6 +54,12 @@ export function GizmosMenu() {
           size="sm"
           variant={gizmoMode === "rotate" ? "default" : "ghost"}
           onClick={() => setGizmoMode("rotate")}
+          disabled={
+            !!(selectedIds && selectedIds.length > 1) || mode !== "edit"
+          }
+          aria-disabled={
+            !!(selectedIds && selectedIds.length > 1) || mode !== "edit"
+          }
         >
           Rotate
         </Button>
@@ -55,6 +67,12 @@ export function GizmosMenu() {
           size="sm"
           variant={gizmoMode === "scale" ? "default" : "ghost"}
           onClick={() => setGizmoMode("scale")}
+          disabled={
+            !!(selectedIds && selectedIds.length > 1) || mode !== "edit"
+          }
+          aria-disabled={
+            !!(selectedIds && selectedIds.length > 1) || mode !== "edit"
+          }
         >
           Scale
         </Button>
@@ -81,6 +99,7 @@ export function GizmosMenu() {
             <Label className="text-xs">Trans</Label>
             <Input
               type="number"
+              aria-label="Translate snap value"
               value={gizmoSnap?.translate ?? ""}
               onChange={(e) => setSnapValue("translate", e.target.value)}
               className="w-full"
@@ -90,6 +109,7 @@ export function GizmosMenu() {
             <Label className="text-xs">Rotate°</Label>
             <Input
               type="number"
+              aria-label="Rotate snap value"
               value={gizmoSnap?.rotate ?? ""}
               onChange={(e) => setSnapValue("rotate", e.target.value)}
               className="w-full"
@@ -99,6 +119,7 @@ export function GizmosMenu() {
             <Label className="text-xs">Scale</Label>
             <Input
               type="number"
+              aria-label="Scale snap value"
               value={gizmoSnap?.scale ?? ""}
               onChange={(e) => setSnapValue("scale", e.target.value)}
               className="w-full"
