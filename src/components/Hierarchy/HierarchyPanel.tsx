@@ -164,13 +164,11 @@ function RenderHierarchy({
   depth = 0,
   selectedId,
   toggleExpanded,
-  onContextMenu,
 }: {
   nodes: any[];
   depth?: number;
   selectedId: string | null;
   toggleExpanded: (id: string) => void;
-  onContextMenu?: (gameObject: GameObjectData) => void;
 }) {
   return (
     <>
@@ -187,7 +185,6 @@ function RenderHierarchy({
                 depth={depth + 1}
                 selectedId={selectedId}
                 toggleExpanded={toggleExpanded}
-                onContextMenu={onContextMenu}
               />
             ) : null
           }

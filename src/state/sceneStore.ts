@@ -118,7 +118,7 @@ interface SceneStore {
   gameObjectMap: Map<string, GameObjectData>;
 
   addGameObject: (name?: string, parentId?: string | null) => string;
-  removeGameObject: (id: string) => void;
+  removeGameObject: (id: string, deleteChildren?: boolean) => void;
   updateGameObject: (id: string, updates: Partial<GameObjectData>) => void;
   updateTransform: (
     gameObjectId: string,
@@ -366,41 +366,65 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     return data.id;
   },
 
-  removeGameObject: (id) => {
+  removeGameObject: (id, deleteChildren = true) => {
     set((state) => {
-      // Remove GameObject and its children recursively
-      const removeIds = new Set<string>();
-      const collectChildren = (goId: string) => {
-        removeIds.add(goId);
-        const go = state.gameObjectMap.get(goId);
-        if (go && go.children) {
-          go.children.forEach(collectChildren);
-        }
-      };
-      collectChildren(id);
+      const target = state.gameObjectMap.get(id);
+      if (!target) return {};
 
-      // Remove from parent's children
-      const gameObject = state.gameObjectMap.get(id);
-      if (gameObject && gameObject.parentId) {
-        const parent = state.gameObjectMap.get(gameObject.parentId);
-        if (parent) {
-          parent.children = parent.children.filter((cid) => cid !== id);
+      // We'll update parent/children relationships below as part of each branch
+
+      if (deleteChildren) {
+        // Recursively delete target and all descendants
+        const removeIds = new Set<string>();
+        const collectChildren = (goId: string) => {
+          removeIds.add(goId);
+          const go = state.gameObjectMap.get(goId);
+          if (go && go.children) {
+            go.children.forEach(collectChildren);
+          }
+        };
+        collectChildren(id);
+
+        const newGameObjects = state.gameObjects.filter(
+          (go) => !removeIds.has(go.id)
+        );
+        const newMap = new Map<string, GameObjectData>();
+        newGameObjects.forEach((go) => newMap.set(go.id, go));
+
+        return {
+          gameObjects: newGameObjects,
+          gameObjectMap: newMap,
+        };
+      } else {
+        // Promote direct children to root (set parentId = null)
+        // 1) Promote direct children to root
+        const promoted = state.gameObjects.map((go) =>
+          go.parentId === id ? { ...go, parentId: null } : go
+        );
+
+        // 2) Remove the target GameObject
+        let finalGameObjects = promoted.filter((go) => go.id !== id);
+
+        // 3) If the target had a parent, remove the target id from that parent's children
+        if (target.parentId) {
+          finalGameObjects = finalGameObjects.map((go) =>
+            go.id === target.parentId
+              ? { ...go, children: go.children.filter((cid) => cid !== id) }
+              : go
+          );
         }
+
+        const newMap = new Map<string, GameObjectData>();
+        finalGameObjects.forEach((go) => newMap.set(go.id, go));
+
+        return {
+          gameObjects: finalGameObjects,
+          gameObjectMap: newMap,
+        };
       }
-
-      const newGameObjects = state.gameObjects.filter(
-        (go) => !removeIds.has(go.id)
-      );
-      const newMap = new Map<string, GameObjectData>();
-      newGameObjects.forEach((go) => newMap.set(go.id, go));
-
-      return {
-        gameObjects: newGameObjects,
-        gameObjectMap: newMap,
-      };
     });
 
-    markDirty(); // T083
+    markDirty();
   },
 
   updateGameObject: (id, updates) => {

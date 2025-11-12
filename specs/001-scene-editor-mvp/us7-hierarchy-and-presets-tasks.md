@@ -125,13 +125,13 @@
 
 **Purpose**: Handle deletion of GameObjects with children
 
-- [ ] T151 [US7] Create DeleteGameObjectDialog component in src/components/Hierarchy/DeleteGameObjectDialog.tsx using shadcn/ui Dialog
-- [ ] T152 [US7] Add radio button options: "Delete children" vs "Promote children to root level"
-- [ ] T153 [US7] Update sceneStore.removeGameObject() to accept deleteChildren boolean parameter
-- [ ] T154 [US7] Implement child deletion logic: if deleteChildren=true, recursively delete all descendants
-- [ ] T155 [US7] Implement child promotion logic: if deleteChildren=false, set children's parentId to null
-- [ ] T156 [US7] Show DeleteGameObjectDialog when user attempts to delete GameObject with children (from context menu or Delete key)
-- [ ] T157 [US7] Skip dialog and delete immediately if GameObject has no children (current behavior)
+ - [x] T151 [US7] Create DeleteGameObjectDialog component in src/components/Hierarchy/DeleteGameObjectDialog.tsx using shadcn/ui Dialog
+ - [x] T152 [US7] Add radio button options: "Delete children" vs "Promote children to root level"
+ - [x] T153 [US7] Update sceneStore.removeGameObject() to accept deleteChildren boolean parameter
+ - [x] T154 [US7] Implement child deletion logic: if deleteChildren=true, recursively delete all descendants
+ - [x] T155 [US7] Implement child promotion logic: if deleteChildren=false, set children's parentId to null
+ - [x] T156 [US7] Show DeleteGameObjectDialog when user attempts to delete GameObject with children (from context menu or Delete key)
+ - [x] T157 [US7] Skip dialog and delete immediately if GameObject has no children (current behavior)
 
 **Checkpoint**: Parent deletion safely handled with user confirmation
 

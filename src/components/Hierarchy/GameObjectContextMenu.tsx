@@ -10,8 +10,9 @@ import {
 import { PRESET_CONFIGS, useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import type { GameObjectData } from "@/types";
-import { memo } from "react";
+import React, { memo, useState } from "react";
 import { ComponentRegistry } from "@/core/Component";
+import { DeleteGameObjectDialog } from "./DeleteGameObjectDialog";
 
 function getPresetConfigs() {
   return Object.entries(PRESET_CONFIGS).map(([key, preset]) => ({
@@ -33,6 +34,8 @@ export const GameObjectContextMenu = memo(function GameObjectContextMenu({
   const addComponent = useSceneStore((state) => state.addComponent);
   const removeGameObject = useSceneStore((state) => state.removeGameObject);
   const selectGameObject = useEditorStore((state) => state.selectGameObject);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [dialogTarget, setDialogTarget] = useState<GameObjectData | null>(null);
 
   return (
     <ContextMenu>
@@ -75,7 +78,17 @@ export const GameObjectContextMenu = memo(function GameObjectContextMenu({
                 ))}
               </ContextMenuSubContent>
             </ContextMenuSub>
-            <ContextMenuItem onClick={() => removeGameObject(gameObject.id)}>
+            <ContextMenuItem
+              onClick={() => {
+                if (gameObject.children && gameObject.children.length > 0) {
+                  // open confirmation dialog
+                  setDialogTarget(gameObject);
+                  setShowDeleteDialog(true);
+                } else {
+                  removeGameObject(gameObject.id);
+                }
+              }}
+            >
               Delete
             </ContextMenuItem>
           </>
@@ -92,6 +105,22 @@ export const GameObjectContextMenu = memo(function GameObjectContextMenu({
           </>
         )}
       </ContextMenuContent>
+      {/* Delete dialog */}
+      {dialogTarget && (
+        <DeleteGameObjectDialog
+          open={showDeleteDialog}
+          gameObject={dialogTarget}
+          onClose={() => {
+            setShowDeleteDialog(false);
+            setDialogTarget(null);
+          }}
+          onConfirm={(deleteChildren) => {
+            removeGameObject(dialogTarget.id, deleteChildren);
+            setShowDeleteDialog(false);
+            setDialogTarget(null);
+          }}
+        />
+      )}
     </ContextMenu>
   );
 });
