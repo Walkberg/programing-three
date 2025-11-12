@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSceneStore, PRESET_CONFIGS } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
+import { useHistoryStore } from "@/state/historyStore";
 import { StorageService } from "@/services/StorageService";
 import { SceneSerializer } from "@/services/SceneSerializer";
 import { Scene } from "@/core/Scene";
@@ -59,6 +60,26 @@ export function Toolbar() {
   const setPlayStateSnapshot = useEditorStore(
     (state) => state.setPlayStateSnapshot
   );
+  const canUndo = useHistoryStore
+    ? useHistoryStore.getState().canUndo()
+    : false;
+  const canRedo = useHistoryStore
+    ? useHistoryStore.getState().canRedo()
+    : false;
+  const undo = () => {
+    try {
+      useHistoryStore.getState().undo();
+    } catch (err) {
+      // ignore
+    }
+  };
+  const redo = () => {
+    try {
+      useHistoryStore.getState().redo();
+    } catch (err) {
+      // ignore
+    }
+  };
 
   const handleAddPreset = (preset: string) => {
     const id = createGameObjectFromPreset(preset);
@@ -290,6 +311,26 @@ export function Toolbar() {
       )}
 
       <div className="h-6 w-px bg-border mx-2" />
+
+      {/* Undo / Redo */}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => useHistoryStore.getState().undo()}
+        disabled={!useHistoryStore.getState().canUndo()}
+        className="gap-2"
+      >
+        Undo
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => useHistoryStore.getState().redo()}
+        disabled={!useHistoryStore.getState().canRedo()}
+        className="gap-2"
+      >
+        Redo
+      </Button>
 
       {/* Gizmos dropdown */}
       <GizmoDropdown>

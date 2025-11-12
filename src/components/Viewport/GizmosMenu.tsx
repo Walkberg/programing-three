@@ -24,6 +24,11 @@ export function GizmosMenu() {
     setGizmoSnap(newSnap);
   };
 
+  const pivotMode = useEditorStore((s) => s.pivotMode);
+  const setPivotMode = useEditorStore((s) => s.setPivotMode);
+  const hoverHandle = useEditorStore((s) => s.hoverHandle);
+  const isDragging = useEditorStore((s) => s.isDragging);
+
   return (
     <div className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm p-3 rounded shadow-md w-56">
       <div className="flex items-center justify-between mb-2">
@@ -100,6 +105,39 @@ export function GizmosMenu() {
             />
           </div>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between mt-2 gap-2">
+        <div className="text-xs">Pivot</div>
+        <div>
+          <Button
+            size="sm"
+            variant={pivotMode === "center" ? "default" : "ghost"}
+            onClick={() => setPivotMode("center")}
+          >
+            Center
+          </Button>
+          <Button
+            size="sm"
+            variant={pivotMode === "local" ? "default" : "ghost"}
+            onClick={() => setPivotMode("local")}
+            className="ml-2"
+          >
+            Local
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-2 text-xs">
+        {isDragging ? (
+          <div className="text-yellow-400">Dragging...</div>
+        ) : hoverHandle ? (
+          <div>
+            Hover: <span className="font-mono">{hoverHandle}</span>
+          </div>
+        ) : (
+          <div className="text-muted-foreground">No gizmo hover</div>
+        )}
       </div>
 
       <div className="text-xs text-muted-foreground mt-2">

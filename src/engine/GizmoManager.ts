@@ -20,6 +20,9 @@ export class GizmoManager {
   private attachedId: string | null = null;
   private options: GizmoManagerOptions = {};
   private transformCallback: TransformChangeCallback | null = null;
+  private hoverCallback: ((handle: string | null) => void) | null = null;
+  private draggingCallback: ((isDragging: boolean) => void) | null = null;
+  private pivotMode: "center" | "local" = "center";
 
   constructor(
     scene: THREE.Scene,
@@ -80,14 +83,37 @@ export class GizmoManager {
     // When dragging starts/stops we can pause orbit controls if needed.
     // Event.detail === true when dragging starts per TransformControls implementation
     // Forward a final change on drag end
-    if (event.value === false) {
-      // drag ended
+    const isDragging = Boolean(event.value);
+    if (this.draggingCallback) this.draggingCallback(isDragging);
+    if (isDragging === false) {
+      // drag ended - ensure final change is forwarded
       this.onChange();
     }
   };
 
+  // Called by external code (e.g., SceneViewport pointer handlers) to report
+  // which gizmo handle is being hovered. We forward to the registered callback.
+  reportHover(handleName: string | null) {
+    if (this.hoverCallback) this.hoverCallback(handleName);
+  }
+
   setTransformCallback(cb: TransformChangeCallback | null) {
     this.transformCallback = cb;
+  }
+
+  setHoverCallback(cb: ((handle: string | null) => void) | null) {
+    this.hoverCallback = cb;
+  }
+
+  setDraggingCallback(cb: ((isDragging: boolean) => void) | null) {
+    this.draggingCallback = cb;
+  }
+
+  setPivotMode(mode: "center" | "local") {
+    this.pivotMode = mode;
+    // TransformControls does not expose a built-in pivot mode toggle; we
+    // expose the value here so higher-level code (SceneViewport) can react
+    // and adjust how it attaches or transforms the control pivot if desired.
   }
 
   attach(object: THREE.Object3D | null, gameObjectId?: string | null) {

@@ -19,10 +19,16 @@ interface EditorStore {
   gizmoMode: GizmoMode;
   gizmoSpace: GizmoSpace;
   gizmoSnap: SnapSettings;
+  pivotMode: "center" | "local";
+  hoverHandle?: string | null;
+  isDragging: boolean;
 
   setGizmoMode: (mode: GizmoMode) => void;
   setGizmoSpace: (space: GizmoSpace) => void;
   setGizmoSnap: (snap: SnapSettings) => void;
+  setPivotMode: (pivotMode: "center" | "local") => void;
+  setHoverHandle: (handle: string | null) => void;
+  setIsDragging: (isDragging: boolean) => void;
 
   // Shortcuts (user-configurable)
   // (moved to src/features/keybinding)
@@ -40,7 +46,23 @@ export const useEditorStore = create<EditorStore>((set) => ({
   isDirty: false,
   gizmoMode: "none",
   gizmoSpace: "world",
-  gizmoSnap: {},
+  // Persist gizmo snap and pivot mode across sessions
+  gizmoSnap:
+    typeof window !== "undefined" && window.localStorage
+      ? (() => {
+          try {
+            const raw = window.localStorage.getItem("editor.gizmoSnap");
+            if (raw) return JSON.parse(raw);
+          } catch (err) {
+            // ignore
+          }
+          return {};
+        })()
+      : {},
+  // pivotMode: center = use object center, local = use object's origin/local pivot
+  pivotMode: "center",
+  hoverHandle: null,
+  isDragging: false,
   // (keybinding state moved to `src/features/keybinding`)
 
   setMode: (mode) => set({ mode }),
@@ -53,7 +75,34 @@ export const useEditorStore = create<EditorStore>((set) => ({
 
   setGizmoMode: (gizmoMode) => set({ gizmoMode }),
   setGizmoSpace: (gizmoSpace) => set({ gizmoSpace }),
-  setGizmoSnap: (gizmoSnap) => set({ gizmoSnap }),
+  setGizmoSnap: (gizmoSnap) =>
+    set(() => {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem(
+            "editor.gizmoSnap",
+            JSON.stringify(gizmoSnap)
+          );
+        }
+      } catch (err) {
+        // ignore
+      }
+      return { gizmoSnap } as any;
+    }),
+  setPivotMode: (pivotMode) =>
+    set(() => {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem("editor.pivotMode", pivotMode);
+        }
+      } catch (err) {
+        // ignore
+      }
+      return { pivotMode } as any;
+    }),
+
+  setHoverHandle: (handle) => set({ hoverHandle: handle }),
+  setIsDragging: (isDragging) => set({ isDragging }),
 
   // (no shortcut state here)
 }));

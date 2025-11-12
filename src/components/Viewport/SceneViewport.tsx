@@ -16,9 +16,12 @@ import {
 import * as THREE from "three";
 import { useRef as useReactRef } from "react";
 import { useGizmoManager } from "@/engine/useGizmoManager";
+import { useHistoryStore } from "@/state/historyStore";
+import { useLayoutEffect } from "react";
 import { CodeExecutor } from "@/services/CodeExecutor"; // T044
 import type { CodeContext } from "@/types"; // T044
 import { GizmosMenu } from "./GizmosMenu";
+import { useMemo } from "react";
 
 // Context to share play mode runtime state without modifying store
 interface PlayModeState {
@@ -245,13 +248,15 @@ const GameObjectRenderer = memo(function GameObjectRenderer() {
 // Gizmo integration inside Canvas: initialize manager and attach to selected object
 function GizmoIntegration() {
   const selectedId = useEditorStore((state) => state.selectedId);
-  const scene = useThree((s) => s.scene);
+  const { scene, camera, gl } = useThree();
   const managerRef = useGizmoManager();
   const manager = managerRef.current;
   const gizmoMode = useEditorStore((s) => s.gizmoMode);
   const gizmoSpace = useEditorStore((s) => s.gizmoSpace);
   const gizmoSnap = useEditorStore((s) => s.gizmoSnap);
   const updateTransform = useSceneStore.getState().updateTransform;
+  const pivotMode = useEditorStore((s) => s.pivotMode);
+  const beforeTransformsRef = useRef<Record<string, any>>({});
 
   useEffect(() => {
     if (!manager) return;
@@ -283,6 +288,77 @@ function GizmoIntegration() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  // Listen for hover and dragging callbacks from the manager and reflect in editor store
+  useEffect(() => {
+    if (!manager) return;
+    const onHover = (handle: string | null) => {
+      const s: any = useEditorStore.getState();
+      if (s && typeof s.setHoverHandle === "function") {
+        s.setHoverHandle(handle);
+      }
+    };
+
+    const onDragging = (isDragging: boolean) => {
+      const s: any = useEditorStore.getState();
+      if (s && typeof s.setIsDragging === "function") {
+        s.setIsDragging(isDragging);
+      }
+
+      try {
+        const sel = selectedId;
+        if (!sel) return;
+
+        if (isDragging) {
+          // drag start: record before transform
+          const go = useSceneStore.getState().gameObjectMap.get(sel);
+          if (go) {
+            const tf = go.components.find((c: any) => c.type === "Transform");
+            beforeTransformsRef.current[sel] = JSON.parse(JSON.stringify(tf));
+          }
+        } else {
+          // drag end: record after transform and push entry
+          const before = beforeTransformsRef.current[sel];
+          const go = useSceneStore.getState().gameObjectMap.get(sel);
+          if (go && before) {
+            const after = go.components.find(
+              (c: any) => c.type === "Transform"
+            );
+            const entry = {
+              type: "transform",
+              gameObjectId: sel,
+              before: {
+                position: before.position ?? null,
+                rotation: before.rotation ?? null,
+                scale: before.scale ?? null,
+              },
+              after: {
+                position: after.position ?? null,
+                rotation: after.rotation ?? null,
+                scale: after.scale ?? null,
+              },
+              timestamp: Date.now(),
+              description: "Gizmo transform",
+            };
+            useHistoryStore.getState().push(entry as any);
+            delete beforeTransformsRef.current[sel];
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    manager.setHoverCallback(onHover);
+    manager.setDraggingCallback(onDragging);
+
+    return () => {
+      if (manager) {
+        manager.setHoverCallback(null);
+        manager.setDraggingCallback(null);
+      }
+    };
+  }, [manager, selectedId]);
+
   // Apply gizmo options when they change
   useEffect(() => {
     if (!manager) return;
@@ -290,10 +366,120 @@ function GizmoIntegration() {
       manager.setMode(gizmoMode === "none" ? "none" : gizmoMode);
       manager.setSpace(gizmoSpace === "world" ? "world" : "local");
       manager.setSnap(gizmoSnap || {});
+      // propagate pivot mode to manager
+      if (typeof manager.setPivotMode === "function") {
+        try {
+          manager.setPivotMode(pivotMode);
+        } catch (err) {
+          // ignore
+        }
+      }
     } catch (err) {
       // ignore
     }
   }, [manager, gizmoMode, gizmoSpace, gizmoSnap]);
+
+  // Pointer hover detection against TransformControls handles (basic heuristic)
+  useEffect(() => {
+    if (!manager) return;
+    const controls: any = (manager as any).controls;
+    if (!controls) return;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const collectMeshes = (obj: any, out: any[]) => {
+      if (!obj) return;
+      if (obj.type === "Mesh" || obj.isMesh) out.push(obj);
+      if (obj.children && obj.children.length) {
+        obj.children.forEach((c: any) => collectMeshes(c, out));
+      }
+    };
+
+    const meshes: any[] = [];
+    collectMeshes(controls, meshes);
+    let lastHovered: any = null;
+    let lastOriginalColor: any = null;
+
+    const onPointerMove = (ev: PointerEvent) => {
+      const canvas = ev.target as HTMLCanvasElement;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+      // use camera from useThree() (captured from outer scope)
+      try {
+        if (!camera) return;
+        raycaster.setFromCamera(mouse, camera as THREE.Camera);
+        const hits = raycaster.intersectObjects(meshes, true);
+        if (hits && hits.length) {
+          const hit = hits[0].object;
+          const name = hit.name || hit.parent?.name || "handle";
+          manager.reportHover(name);
+          // simple highlight: tint material emissive if available
+          try {
+            if (lastHovered && lastHovered !== hit) {
+              // restore previous
+              if (lastOriginalColor && lastHovered.material) {
+                if (lastHovered.material.emissive) {
+                  lastHovered.material.emissive.setHex(lastOriginalColor);
+                } else if (lastHovered.material.color) {
+                  lastHovered.material.color.setHex(lastOriginalColor);
+                }
+              }
+              lastOriginalColor = null;
+              lastHovered = null;
+            }
+
+            if (!lastHovered || lastHovered !== hit) {
+              if (hit.material) {
+                if (hit.material.emissive) {
+                  lastOriginalColor = hit.material.emissive.getHex();
+                  hit.material.emissive.setHex(0xffff00);
+                } else if (hit.material.color) {
+                  lastOriginalColor = hit.material.color.getHex();
+                  hit.material.color.setHex(0xffff00);
+                }
+                lastHovered = hit;
+              }
+            }
+          } catch (err) {
+            // ignore highlighting errors
+          }
+        } else {
+          manager.reportHover(null);
+          if (lastHovered) {
+            try {
+              if (lastOriginalColor && lastHovered.material) {
+                if (lastHovered.material.emissive) {
+                  lastHovered.material.emissive.setHex(lastOriginalColor);
+                } else if (lastHovered.material.color) {
+                  lastHovered.material.color.setHex(lastOriginalColor);
+                }
+              }
+            } catch (err) {
+              // ignore
+            }
+            lastHovered = null;
+            lastOriginalColor = null;
+          }
+        }
+      } catch (err) {
+        // defensive: swallow any errors
+      }
+    };
+
+    const canvasEl =
+      gl && (gl.domElement as HTMLCanvasElement)
+        ? (gl.domElement as HTMLCanvasElement)
+        : (document.querySelector("canvas") as HTMLCanvasElement | null);
+    if (canvasEl) canvasEl.addEventListener("pointermove", onPointerMove);
+
+    return () => {
+      if (canvasEl) canvasEl.removeEventListener("pointermove", onPointerMove);
+      manager.reportHover(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manager, camera, gl]);
 
   // Forward transform changes from the gizmo to the scene store
   useEffect(() => {
@@ -529,8 +715,63 @@ function GameObjectMesh({ gameObject, isSelected }: GameObjectMeshProps) {
   );
 }
 
+// 3D snap indicator rendered inside the Canvas
+function SnapIndicator() {
+  const isDragging = useEditorStore((s) => s.isDragging);
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const gizmoSnap = useEditorStore((s) => s.gizmoSnap);
+  const gameObject = useSceneStore((s) =>
+    s.gameObjectMap.get(selectedId ?? "")
+  );
+
+  const pos = useMemo(() => {
+    if (!gameObject) return null;
+    const tf = gameObject.components.find(
+      (c: any) => c.type === "Transform"
+    ) as any;
+    if (!tf) return null;
+    const p = tf.position;
+    const snap = gizmoSnap?.translate;
+    if (typeof snap === "number" && snap > 0) {
+      return [
+        Math.round(p.x / snap) * snap,
+        Math.round(p.y / snap) * snap,
+        Math.round(p.z / snap) * snap,
+      ] as [number, number, number];
+    }
+    return [p.x, p.y, p.z] as [number, number, number];
+  }, [gameObject, gizmoSnap]);
+
+  if (!isDragging || !pos) return null;
+
+  return (
+    <group position={pos}>
+      <mesh>
+        <boxGeometry args={[0.25, 0.25, 0.25]} />
+        <meshStandardMaterial color="#00ffff" wireframe opacity={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
 export function SceneViewport() {
   const [fps, setFps] = useState(60);
+  // tooltip state
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const hoverHandle = useEditorStore((s) => s.hoverHandle);
+  const gizmoMode = useEditorStore((s) => s.gizmoMode);
+  const isDragging = useEditorStore((s) => s.isDragging);
+  const selectedId = useEditorStore((s) => s.selectedId);
+
+  useLayoutEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    return () => window.removeEventListener("pointermove", onPointerMove);
+  }, []);
   const mode = useEditorStore((state) => state.mode);
 
   // Create play mode state that persists across renders but clears on mode change
@@ -588,6 +829,9 @@ export function SceneViewport() {
           {/* Component update loop for play mode */}
           <UpdateLoop />
 
+          {/* Snap indicator (3D helper) */}
+          <SnapIndicator />
+
           {/* Performance monitoring */}
           <PerformanceMonitor onFpsUpdate={setFps} />
           {/* Gizmo overlay menu (UI inside Canvas but rendered as HTML overlay via portal) */}
@@ -597,6 +841,19 @@ export function SceneViewport() {
 
       {/* Render Gizmos Menu overlay */}
       <GizmosMenu />
+
+      {/* Hover tooltip overlay */}
+      {hoverHandle && mousePos && (
+        <div
+          className="pointer-events-none absolute z-50 bg-black/80 text-white text-xs px-2 py-1 rounded"
+          style={{ left: mousePos.x + 12, top: mousePos.y + 12 }}
+        >
+          <div className="font-medium">{hoverHandle}</div>
+          <div className="text-xs text-muted-foreground">{gizmoMode}</div>
+        </div>
+      )}
+
+      {/* Snap indicator overlay removed in favor of 3D SnapIndicator rendered inside Canvas */}
 
       {/* Viewport info overlay */}
       <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-2 py-1 rounded">
