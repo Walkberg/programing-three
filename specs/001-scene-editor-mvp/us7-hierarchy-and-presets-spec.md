@@ -267,3 +267,4 @@ function GameObjectRenderer({ gameObject, allGameObjects }) {
 - Hierarchy search/filter
 - Show/hide GameObject in viewport (eye icon)
 - Lock GameObject from selection (lock icon)
+**Important:** Code in the `src/core/` directory must remain pure and independent. It must never call the store, React hooks, or any part of the application outside the core itself. Any dependency on state or hierarchy must be injected or handled at the application/service layer.

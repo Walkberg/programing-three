@@ -14,6 +14,7 @@ import {
   Sun,
   Dot,
 } from "lucide-react";
+import { GameObjectContextMenu } from "./GameObjectContextMenu";
 // Helper to get icon by GameObject type
 function getGameObjectIcon(gameObject: GameObjectData) {
   const mesh = gameObject.components.find(
@@ -60,7 +61,6 @@ export const GameObjectItem = memo(function GameObjectItem({
   onToggle,
   childrenItems,
 }: GameObjectItemProps) {
-  // Make item draggable
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: gameObject.id,
     data: { gameObjectId: gameObject.id },
@@ -123,83 +123,85 @@ export const GameObjectItem = memo(function GameObjectItem({
   };
 
   return (
-    <div style={{ opacity: isDragging ? 0.5 : 1 }}>
-      {/* Above drop zone */}
-      <div
-        ref={setAboveRef}
-        className={cn("h-2 w-full", isOverAbove && "bg-blue-400")}
-        style={{ marginTop: 2, marginBottom: 2 }}
-      />
-      {/* Main draggable item */}
-      <div
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
-        className={cn(
-          "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-accent group",
-          isSelected && "bg-accent",
-          mode === "play" && "cursor-default",
-          isOverCenter && "bg-blue-100"
-        )}
-        style={{ paddingLeft: `${depth * 16 + 8}px`, position: "relative" }}
-        onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
-      >
-        {/* Center drop zone (overlay) */}
+    <GameObjectContextMenu gameObject={gameObject}>
+      <div style={{ opacity: isDragging ? 0.5 : 1 }}>
+        {/* Above drop zone */}
         <div
-          ref={setCenterRef}
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 1,
-            pointerEvents: "none",
-          }}
+          ref={setAboveRef}
+          className={cn("h-2 w-full", isOverAbove && "bg-blue-400")}
+          style={{ marginTop: 2, marginBottom: 2 }}
         />
-        {hasChildren ? (
-          <button
-            type="button"
-            className="mr-1 p-0 bg-transparent border-none outline-none focus:outline-none"
-            tabIndex={-1}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle?.(gameObject.id);
+        {/* Main draggable item */}
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-accent group",
+            isSelected && "bg-accent",
+            mode === "play" && "cursor-default",
+            isOverCenter && "bg-blue-100"
+          )}
+          style={{ paddingLeft: `${depth * 16 + 8}px`, position: "relative" }}
+          onClick={handleClick}
+          onDoubleClick={handleDoubleClick}
+        >
+          {/* Center drop zone (overlay) */}
+          <div
+            ref={setCenterRef}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              pointerEvents: "none",
             }}
-            aria-label={gameObject.isExpanded ? "Collapse" : "Expand"}
-          >
-            {gameObject.isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
-          </button>
-        ) : (
-          <div className="w-5 mr-1" />
-        )}
-
-        {getGameObjectIcon(gameObject)}
-        {isRenaming ? (
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={handleRename}
-            onKeyDown={handleKeyDown}
-            className="flex-1 px-1 py-0 text-sm bg-background border border-border rounded"
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
           />
-        ) : (
-          <span className="flex-1 text-sm truncate">{gameObject.name}</span>
-        )}
+          {hasChildren ? (
+            <button
+              type="button"
+              className="mr-1 p-0 bg-transparent border-none outline-none focus:outline-none"
+              tabIndex={-1}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle?.(gameObject.id);
+              }}
+              aria-label={gameObject.isExpanded ? "Collapse" : "Expand"}
+            >
+              {gameObject.isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+          ) : (
+            <div className="w-5 mr-1" />
+          )}
+
+          {getGameObjectIcon(gameObject)}
+          {isRenaming ? (
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={handleRename}
+              onKeyDown={handleKeyDown}
+              className="flex-1 px-1 py-0 text-sm bg-background border border-border rounded"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span className="flex-1 text-sm truncate">{gameObject.name}</span>
+          )}
+        </div>
+        {/* Below drop zone */}
+        <div
+          ref={setBelowRef}
+          className={cn("h-2 w-full", isOverBelow && "bg-blue-400")}
+          style={{ marginTop: 2, marginBottom: 2 }}
+        />
+        {/* Render children if expanded */}
+        {hasChildren && gameObject.isExpanded && childrenItems}
       </div>
-      {/* Below drop zone */}
-      <div
-        ref={setBelowRef}
-        className={cn("h-2 w-full", isOverBelow && "bg-blue-400")}
-        style={{ marginTop: 2, marginBottom: 2 }}
-      />
-      {/* Render children if expanded */}
-      {hasChildren && gameObject.isExpanded && childrenItems}
-    </div>
+    </GameObjectContextMenu>
   );
 });

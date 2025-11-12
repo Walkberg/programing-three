@@ -1,9 +1,10 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import type { DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import { GameObjectItem } from "./GameObjectItem";
+import { GameObjectContextMenu } from "./GameObjectContextMenu";
 import { toast } from "@/hooks/use-toast";
 import type { GameObjectData } from "@/types";
 
@@ -107,23 +108,26 @@ export const HierarchyPanel = memo(function HierarchyPanel() {
     // Visual drop indicators handled by GameObjectItem drop zones
   };
 
+  // Empty panel with context menu
   if (gameObjects.length === 0) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
-        No GameObjects in scene.
-        <br />
-        Click "Add GameObject" to create one.
-        <div
-          ref={setRootDropRef}
-          id="hierarchy-root-drop"
-          style={{
-            height: 4,
-            marginBottom: 4,
-            background: isOverRoot ? "#60a5fa" : undefined,
-          }}
-          className="w-full rounded transition-colors"
-        />
-      </div>
+      <GameObjectContextMenu>
+        <div className="p-4 text-center text-sm text-muted-foreground relative">
+          No GameObjects in scene.
+          <br />
+          Click "Add GameObject" to create one.
+          <div
+            ref={setRootDropRef}
+            id="hierarchy-root-drop"
+            style={{
+              height: 4,
+              marginBottom: 4,
+              background: isOverRoot ? "#60a5fa" : undefined,
+            }}
+            className="w-full rounded transition-colors"
+          />
+        </div>
+      </GameObjectContextMenu>
     );
   }
 
@@ -131,24 +135,26 @@ export const HierarchyPanel = memo(function HierarchyPanel() {
 
   return (
     <DndContext onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
-      <div className="p-2">
-        <div
-          ref={setRootDropRef}
-          id="hierarchy-root-drop"
-          style={{
-            height: 8,
-            marginBottom: 4,
-            background: isOverRoot ? "#60a5fa" : undefined,
-          }}
-          className="w-full rounded transition-colors"
-        />
-        <RenderHierarchy
-          nodes={roots}
-          depth={0}
-          selectedId={selectedId}
-          toggleExpanded={toggleExpanded}
-        />
-      </div>
+      <GameObjectContextMenu>
+        <div className="p-2 relative h-full ">
+          <div
+            ref={setRootDropRef}
+            id="hierarchy-root-drop"
+            style={{
+              height: 8,
+              marginBottom: 4,
+              background: isOverRoot ? "#60a5fa" : undefined,
+            }}
+            className="w-full rounded transition-colors"
+          />
+          <RenderHierarchy
+            nodes={roots}
+            depth={0}
+            selectedId={selectedId}
+            toggleExpanded={toggleExpanded}
+          />
+        </div>
+      </GameObjectContextMenu>
     </DndContext>
   );
 });
@@ -158,17 +164,18 @@ function RenderHierarchy({
   depth = 0,
   selectedId,
   toggleExpanded,
+  onContextMenu,
 }: {
   nodes: any[];
   depth?: number;
   selectedId: string | null;
   toggleExpanded: (id: string) => void;
+  onContextMenu?: (gameObject: GameObjectData) => void;
 }) {
   return (
     <>
       {nodes.map((node) => (
         <GameObjectItem
-          key={node.id}
           gameObject={node}
           isSelected={node.id === selectedId}
           depth={depth}
@@ -180,6 +187,7 @@ function RenderHierarchy({
                 depth={depth + 1}
                 selectedId={selectedId}
                 toggleExpanded={toggleExpanded}
+                onContextMenu={onContextMenu}
               />
             ) : null
           }
