@@ -106,16 +106,16 @@
 
 **Purpose**: Add right-click context menu to Hierarchy panel
 
-- [ ] T141 [P] [US7] Create GameObjectContextMenu component in src/components/Hierarchy/GameObjectContextMenu.tsx using shadcn/ui ContextMenu
-- [ ] T142 [US7] Add context menu trigger to HierarchyPanel empty space (right-click on panel background)
-- [ ] T143 [US7] Add preset menu items to empty-space context menu (Empty, Cube, Sphere, Plane, Camera, Light)
-- [ ] T144 [US7] Wire empty-space context menu to sceneStore.createGameObjectFromPreset()
-- [ ] T145 [US7] Add context menu trigger to GameObjectItem (right-click on GameObject)
-- [ ] T146 [US7] Add "Add Child >" submenu to GameObject context menu with all preset options
-- [ ] T147 [US7] Wire "Add Child >" submenu to sceneStore.createGameObjectFromPreset(preset, selectedGameObjectId)
-- [ ] T148 [US7] Add "Add Component >" submenu to GameObject context menu with ComponentRegistry types
-- [ ] T149 [US7] Wire "Add Component >" submenu to sceneStore.addComponent()
-- [ ] T150 [US7] Add "Delete" option to GameObject context menu, wire to sceneStore.removeGameObject()
+- [x] T141 [P] [US7] Create GameObjectContextMenu component in src/components/Hierarchy/GameObjectContextMenu.tsx using shadcn/ui ContextMenu
+- [x] T142 [US7] Add context menu trigger to HierarchyPanel empty space (right-click on panel background)
+- [x] T143 [US7] Add preset menu items to empty-space context menu (Empty, Cube, Sphere, Plane, Camera, Light)
+- [x] T144 [US7] Wire empty-space context menu to sceneStore.createGameObjectFromPreset()
+- [x] T145 [US7] Add context menu trigger to GameObjectItem (right-click on GameObject)
+- [x] T146 [US7] Add "Add Child >" submenu to GameObject context menu with all preset options
+- [x] T147 [US7] Wire "Add Child >" submenu to sceneStore.createGameObjectFromPreset(preset, selectedGameObjectId)
+- [x] T148 [US7] Add "Add Component >" submenu to GameObject context menu with ComponentRegistry types
+- [x] T149 [US7] Wire "Add Component >" submenu to sceneStore.addComponent()
+- [x] T150 [US7] Add "Delete" option to GameObject context menu, wire to sceneStore.removeGameObject()
 
 **Checkpoint**: Context menus functional for quick GameObject/component creation
 
