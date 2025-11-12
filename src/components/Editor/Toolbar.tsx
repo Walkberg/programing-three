@@ -36,6 +36,12 @@ import {
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { LayoutManagerPopover } from "@/components/Docking/LayoutManagerPopover";
+import {
+  DropdownMenu as GizmoDropdown,
+  DropdownMenuTrigger as GizmoTrigger,
+  DropdownMenuContent as GizmoContent,
+  DropdownMenuItem as GizmoItem,
+} from "@/components/ui/dropdown-menu";
 
 export function Toolbar() {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -285,6 +291,44 @@ export function Toolbar() {
 
       <div className="h-6 w-px bg-border mx-2" />
 
+      {/* Gizmos dropdown */}
+      <GizmoDropdown>
+        <GizmoTrigger asChild>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={mode === "play"}
+            className="gap-2"
+          >
+            Gizmos
+          </Button>
+        </GizmoTrigger>
+        <GizmoContent side="bottom">
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("translate")}
+          >
+            Translate (W)
+          </GizmoItem>
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("rotate")}
+          >
+            Rotate (E)
+          </GizmoItem>
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("scale")}
+          >
+            Scale (R)
+          </GizmoItem>
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("none")}
+          >
+            Off
+          </GizmoItem>
+        </GizmoContent>
+      </GizmoDropdown>
+
+      <div className="h-6 w-px bg-border mx-2" />
+
       {/* Preset DropdownMenu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -375,6 +419,26 @@ export function Toolbar() {
                     Space
                   </kbd>
                   <span>Toggle Play/Stop mode</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    W
+                  </kbd>
+                  <span>Translate Gizmo</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    E
+                  </kbd>
+                  <span>Rotate Gizmo</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    R
+                  </kbd>
+                  <span>Scale Gizmo</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    Q
+                  </kbd>
+                  <span>Toggle World/Local Gizmo Space</span>
 
                   <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
                     Ctrl+S

@@ -1,5 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import { useAssetStore } from "@/state/assetStore";
@@ -13,8 +14,11 @@ import {
   useEffect,
 } from "react"; // T044: added useEffect
 import * as THREE from "three";
+import { useRef as useReactRef } from "react";
+import { useGizmoManager } from "@/engine/useGizmoManager";
 import { CodeExecutor } from "@/services/CodeExecutor"; // T044
 import type { CodeContext } from "@/types"; // T044
+import { GizmosMenu } from "./GizmosMenu";
 
 // Context to share play mode runtime state without modifying store
 interface PlayModeState {
@@ -238,6 +242,102 @@ const GameObjectRenderer = memo(function GameObjectRenderer() {
   );
 });
 
+// Gizmo integration inside Canvas: initialize manager and attach to selected object
+function GizmoIntegration() {
+  const selectedId = useEditorStore((state) => state.selectedId);
+  const scene = useThree((s) => s.scene);
+  const managerRef = useGizmoManager();
+  const manager = managerRef.current;
+  const gizmoMode = useEditorStore((s) => s.gizmoMode);
+  const gizmoSpace = useEditorStore((s) => s.gizmoSpace);
+  const gizmoSnap = useEditorStore((s) => s.gizmoSnap);
+  const updateTransform = useSceneStore.getState().updateTransform;
+
+  useEffect(() => {
+    if (!manager) return;
+    if (!selectedId) {
+      manager.detach();
+      return;
+    }
+
+    // Find object by name or userData.gameObjectId
+    let target: THREE.Object3D | null = null;
+    target = scene.getObjectByProperty("name", selectedId) as any;
+    if (!target) {
+      scene.traverse((child) => {
+        if (
+          !target &&
+          child.userData &&
+          child.userData.gameObjectId === selectedId
+        ) {
+          target = child;
+        }
+      });
+    }
+
+    if (target) {
+      manager.attach(target, selectedId);
+    } else {
+      manager.detach();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
+  // Apply gizmo options when they change
+  useEffect(() => {
+    if (!manager) return;
+    try {
+      manager.setMode(gizmoMode === "none" ? "none" : gizmoMode);
+      manager.setSpace(gizmoSpace === "world" ? "world" : "local");
+      manager.setSnap(gizmoSnap || {});
+    } catch (err) {
+      // ignore
+    }
+  }, [manager, gizmoMode, gizmoSpace, gizmoSnap]);
+
+  // Forward transform changes from the gizmo to the scene store
+  useEffect(() => {
+    if (!manager) return;
+    manager.setTransformCallback((id, partial) => {
+      // map partial to updateTransform call
+      const pos = partial.position
+        ? {
+            x: partial.position.x,
+            y: partial.position.y,
+            z: partial.position.z,
+          }
+        : undefined;
+      const rot = partial.rotation
+        ? {
+            x: partial.rotation.x,
+            y: partial.rotation.y,
+            z: partial.rotation.z,
+          }
+        : undefined;
+      const scl = partial.scale
+        ? { x: partial.scale.x, y: partial.scale.y, z: partial.scale.z }
+        : undefined;
+      try {
+        updateTransform(id, pos as any, rot as any, scl as any);
+      } catch (err) {
+        // ignore
+      }
+    });
+
+    return () => {
+      if (manager) manager.setTransformCallback(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manager]);
+
+  // update manager each frame (no-op for now but kept for extensibility)
+  useFrame(() => {
+    if (manager) manager.update();
+  });
+
+  return null;
+}
+
 interface GameObjectMeshProps {
   gameObject: any;
   isSelected: boolean;
@@ -287,6 +387,16 @@ function GameObjectMesh({ gameObject, isSelected }: GameObjectMeshProps) {
       }
     }
   });
+
+  useEffect(() => {
+    if (groupRef.current) {
+      groupRef.current.name = gameObject.id;
+      groupRef.current.userData = {
+        ...(groupRef.current.userData || {}),
+        gameObjectId: gameObject.id,
+      };
+    }
+  }, [gameObject.id]);
 
   if (!transform) {
     return null;
@@ -388,7 +498,7 @@ function GameObjectMesh({ gameObject, isSelected }: GameObjectMeshProps) {
   };
 
   return (
-    <group>
+    <group ref={groupRef} name={gameObject.id}>
       <mesh
         ref={meshRef}
         position={position}
@@ -469,6 +579,9 @@ export function SceneViewport() {
             maxDistance={50}
           />
 
+          {/* Gizmo manager integration */}
+          <GizmoIntegration />
+
           {/* Render GameObjects */}
           <GameObjectRenderer />
 
@@ -477,8 +590,13 @@ export function SceneViewport() {
 
           {/* Performance monitoring */}
           <PerformanceMonitor onFpsUpdate={setFps} />
+          {/* Gizmo overlay menu (UI inside Canvas but rendered as HTML overlay via portal) */}
+          {/* The actual GizmosMenu is an HTML overlay outside Canvas; render it below Canvas */}
         </Canvas>
       </PlayModeContext.Provider>
+
+      {/* Render Gizmos Menu overlay */}
+      <GizmosMenu />
 
       {/* Viewport info overlay */}
       <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-2 py-1 rounded">

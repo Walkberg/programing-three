@@ -68,6 +68,22 @@ export interface EditorState {
   playStateSnapshot: SceneData | null;
 }
 
+// Gizmo related types
+export type GizmoMode = "translate" | "rotate" | "scale" | "none";
+export type GizmoSpace = "world" | "local";
+
+export interface SnapSettings {
+  translate?: number | null;
+  rotate?: number | null; // degrees
+  scale?: number | null;
+}
+
+export interface GizmoManagerOptions {
+  mode?: GizmoMode;
+  space?: GizmoSpace;
+  snap?: SnapSettings;
+}
+
 export interface SceneState {
   gameObjects: GameObjectData[];
   gameObjectMap: Map<string, GameObjectData>;

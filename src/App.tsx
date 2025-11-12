@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import "./App.css";
+import { useGlobalShortcuts } from "@/features/keybinding/useGlobalShortcuts";
 
 // Lazy load EditorLayout for code splitting (T079)
 const EditorLayout = lazy(() =>
@@ -11,6 +12,8 @@ const EditorLayout = lazy(() =>
 );
 
 function App() {
+  useGlobalShortcuts();
+
   return (
     <>
       <Suspense fallback={<LoadingSpinner />}>
