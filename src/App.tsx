@@ -12,6 +12,7 @@ import { CodePanelPlugin } from "./plugins/CodePluggin";
 import { LayersPanelPlugin } from "./plugins/LayerManagerPlugin";
 import { DockingPanelPlugin } from "./plugins/docking/docking.plugin";
 import { PluginEditor } from "./plugins/plugin-editor/pluggin-editor.plugin";
+import { DockingProvider } from "./components/Docking/DockingProvider";
 
 registerPlugin(CodePanelPlugin);
 registerPlugin(LayersPanelPlugin);
@@ -31,7 +32,9 @@ function App() {
     <>
       <Suspense fallback={<LoadingSpinner />}>
         <PluginProvider manager={singletonPluginManager}>
-          <EditorLayout />
+          <DockingProvider>
+            <EditorLayout />
+          </DockingProvider>
         </PluginProvider>
       </Suspense>
       <Toaster />

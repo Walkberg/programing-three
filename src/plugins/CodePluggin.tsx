@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { BasePlugin } from "@/core/plugin/base-plugin";
 import { usePluginManager } from "@/features/plugin/PlugginProvider";
-import { House, Terminal } from "lucide-react";
+import { House } from "lucide-react";
 
 export class CodePanelPlugin extends BasePlugin {
   public id = "code-panel-plugin";
@@ -11,7 +11,6 @@ export class CodePanelPlugin extends BasePlugin {
   public version = "1.0.0";
 
   register(): void {
-    // Enregistrer la commande
     this.registerCommand("open-code-panel", () => {
       console.log("Ouverture du panneau de code depuis le plugin");
       this.executeCommand("docking.add-panel", {
@@ -20,7 +19,6 @@ export class CodePanelPlugin extends BasePlugin {
       });
     });
 
-    // Enregistrer l'action toolbar
     this.registerToolbarAction({
       type: "button",
       label: "Code",
@@ -48,10 +46,7 @@ const CodePanelComponent: React.FC = () => {
   const pluginManager = usePluginManager();
 
   const handleAddPannel = () => {
-    pluginManager.executeCommand("docking.add-panel", {
-      id: "code",
-      title: "Code",
-    });
+    pluginManager.executeCommand("docking.add-panel", "code");
   };
 
   return (

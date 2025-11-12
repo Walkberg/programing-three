@@ -7,7 +7,6 @@ import type {
   Zone,
   LeafZone,
   SplitZone,
-  PanelType,
   LayoutStore,
   LayoutPreset,
 } from "@/types/layout";
@@ -94,7 +93,7 @@ export const useLayoutStore = create<LayoutStore>()(
 
         setLayout: (zone) => set({ rootZone: zone }),
 
-        addDockerPanel: (panelId: PanelType) => {
+        addDockerPanel: (panelId: string) => {
           const { rootZone } = get();
           const firstLeaf = findFirstLeafZone(rootZone);
           if (firstLeaf) {
