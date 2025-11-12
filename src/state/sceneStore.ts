@@ -1,5 +1,3 @@
-// Phase 2: GameObject Presets System
-// T109: PRESET_CONFIGS constant
 export const PRESET_CONFIGS: Record<
   string,
   { name: string; components: ComponentData[] }
@@ -140,11 +138,15 @@ interface SceneStore {
   toggleExpanded: (id: string) => void;
   setScene: (gameObjects: GameObjectData[]) => void;
   clear: () => void;
-  // T110: createGameObjectFromPreset action
   createGameObjectFromPreset: (
     presetType: string,
     parentId?: string | null
   ) => string | null;
+  reorderSibling: (
+    draggedId: string,
+    targetId: string,
+    position: "above" | "below"
+  ) => void;
 }
 
 // Helper to mark scene as dirty (T083)
@@ -160,12 +162,10 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
   ) => {
     const config = PRESET_CONFIGS[presetType];
     if (!config) return null;
-    // T115: Camera/Light placeholder
     if (presetType === "camera" || presetType === "light") {
       console.warn(`${config.name} components coming soon`);
       return null;
     }
-    // T111: Empty preset auto-increment naming
     let name = config.name;
     if (presetType === "empty") {
       const state = get();
@@ -174,9 +174,9 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       ).length;
       name = count === 0 ? "Empty" : `Empty (${count + 1})`;
     }
-    // Add GameObject
     return get().addGameObject(name, parentId);
   },
+
   setParent: (id: string, newParentId: string | null) => {
     const state = get();
     // Validation: cannot set parent to self or circular
@@ -186,26 +186,42 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     set((currentState) => {
       const go = currentState.gameObjectMap.get(id);
       if (!go) return {};
+
       const oldParentId = go.parentId;
+      let updatedGameObjects = [...currentState.gameObjects];
+      let updatedMap = new Map(currentState.gameObjectMap);
 
-      // Remove from old parent's children
-      if (oldParentId && currentState.gameObjectMap.has(oldParentId)) {
-        const oldParent = currentState.gameObjectMap.get(oldParentId)!;
-        oldParent.children = oldParent.children.filter((cid) => cid !== id);
+      if (oldParentId && updatedMap.has(oldParentId)) {
+        const oldParent = updatedMap.get(oldParentId)!;
+        const newOldParent = {
+          ...oldParent,
+          children: oldParent.children.filter((cid) => cid !== id),
+        };
+        updatedMap.set(oldParentId, newOldParent);
+        updatedGameObjects = updatedGameObjects.map((obj) =>
+          obj.id === oldParentId ? newOldParent : obj
+        );
       }
 
-      // Add to new parent's children
-      if (newParentId && currentState.gameObjectMap.has(newParentId)) {
-        const newParent = currentState.gameObjectMap.get(newParentId)!;
-        newParent.children = [...newParent.children, id];
+      if (newParentId && updatedMap.has(newParentId)) {
+        const newParent = updatedMap.get(newParentId)!;
+        const filteredChildren = newParent.children.filter((cid) => cid !== id);
+        const newChildren = [...filteredChildren, id];
+        const newNewParent = {
+          ...newParent,
+          children: newChildren,
+        };
+        updatedMap.set(newParentId, newNewParent);
+        updatedGameObjects = updatedGameObjects.map((obj) =>
+          obj.id === newParentId ? newNewParent : obj
+        );
       }
 
-      // Update GameObject's parentId
-      const updatedGameObjects = currentState.gameObjects.map((obj) =>
-        obj.id === id ? { ...obj, parentId: newParentId } : obj
+      const newGo = { ...go, parentId: newParentId };
+      updatedMap.set(id, newGo);
+      updatedGameObjects = updatedGameObjects.map((obj) =>
+        obj.id === id ? newGo : obj
       );
-      const updatedMap = new Map<string, GameObjectData>();
-      updatedGameObjects.forEach((obj) => updatedMap.set(obj.id, obj));
 
       return {
         gameObjects: updatedGameObjects,
@@ -214,6 +230,77 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     });
     markDirty();
     return true;
+  },
+  reorderSibling: (draggedId, targetId, position) => {
+    set((state) => {
+      const draggedObj = state.gameObjectMap.get(draggedId);
+      const targetObj = state.gameObjectMap.get(targetId);
+
+      if (!draggedObj || !targetObj) return {};
+
+      // Ils doivent avoir le même parent
+      if (draggedObj.parentId !== targetObj.parentId) {
+        console.warn("Cannot reorder: objects have different parents");
+        return {};
+      }
+
+      const parentId = draggedObj.parentId;
+
+      // Si c'est à la racine
+      if (parentId === null) {
+        // Filtrer les objets racine uniquement
+        let rootObjects = state.gameObjects.filter(
+          (obj) => obj.parentId === null && obj.id !== draggedId
+        );
+
+        const targetIdx = rootObjects.findIndex((obj) => obj.id === targetId);
+        if (targetIdx === -1) return {};
+
+        // Insérer selon la position
+        const insertIdx = position === "above" ? targetIdx : targetIdx + 1;
+        rootObjects.splice(insertIdx, 0, draggedObj);
+
+        // Reconstruire le tableau complet en préservant l'ordre des enfants
+        const nonRootObjects = state.gameObjects.filter(
+          (obj) => obj.parentId !== null
+        );
+
+        return {
+          gameObjects: [...rootObjects, ...nonRootObjects],
+        };
+      }
+
+      // Si c'est dans un parent
+      const parent = state.gameObjectMap.get(parentId);
+      if (!parent) return {};
+
+      // Réordonner les children
+      let newChildren = parent.children.filter((cid) => cid !== draggedId);
+      const targetIdx = newChildren.indexOf(targetId);
+
+      if (targetIdx === -1) return {};
+
+      const insertIdx = position === "above" ? targetIdx : targetIdx + 1;
+      newChildren.splice(insertIdx, 0, draggedId);
+
+      // Créer un nouveau parent avec les children réordonnés
+      const newParent = { ...parent, children: newChildren };
+
+      // Mettre à jour le gameObjects et la map
+      const updatedGameObjects = state.gameObjects.map((obj) =>
+        obj.id === parentId ? newParent : obj
+      );
+
+      const updatedMap = new Map(state.gameObjectMap);
+      updatedMap.set(parentId, newParent);
+
+      return {
+        gameObjects: updatedGameObjects,
+        gameObjectMap: updatedMap,
+      };
+    });
+
+    markDirty();
   },
 
   canSetParent: (id: string, newParentId: string | null) => {
@@ -432,7 +519,6 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
       gameObjects,
       gameObjectMap: newMap,
     });
-    // Don't mark dirty when loading a scene
   },
 
   clear: () => {

@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useEditorStore } from "@/state/editorStore";
 import { useSceneStore } from "@/state/sceneStore";
 import type { GameObjectData } from "@/types";
@@ -59,6 +60,28 @@ export const GameObjectItem = memo(function GameObjectItem({
   onToggle,
   childrenItems,
 }: GameObjectItemProps) {
+  // Make item draggable
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: gameObject.id,
+    data: { gameObjectId: gameObject.id },
+  });
+
+  // Drop zones: above, below, center
+  const aboveId = `${gameObject.id}-above`;
+  const belowId = `${gameObject.id}-below`;
+  const centerId = `${gameObject.id}-center`;
+  const { setNodeRef: setAboveRef, isOver: isOverAbove } = useDroppable({
+    id: aboveId,
+    data: { targetId: gameObject.id, position: "above" },
+  });
+  const { setNodeRef: setBelowRef, isOver: isOverBelow } = useDroppable({
+    id: belowId,
+    data: { targetId: gameObject.id, position: "below" },
+  });
+  const { setNodeRef: setCenterRef, isOver: isOverCenter } = useDroppable({
+    id: centerId,
+    data: { targetId: gameObject.id, position: "center" },
+  });
   const [isRenaming, setIsRenaming] = useState(false);
   const [name, setName] = useState(gameObject.name);
 
@@ -100,17 +123,38 @@ export const GameObjectItem = memo(function GameObjectItem({
   };
 
   return (
-    <div>
+    <div style={{ opacity: isDragging ? 0.5 : 1 }}>
+      {/* Above drop zone */}
       <div
+        ref={setAboveRef}
+        className={cn("h-2 w-full", isOverAbove && "bg-blue-400")}
+        style={{ marginTop: 2, marginBottom: 2 }}
+      />
+      {/* Main draggable item */}
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
         className={cn(
           "flex items-center px-2 py-1 rounded cursor-pointer hover:bg-accent group",
           isSelected && "bg-accent",
-          mode === "play" && "cursor-default"
+          mode === "play" && "cursor-default",
+          isOverCenter && "bg-blue-100"
         )}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        style={{ paddingLeft: `${depth * 16 + 8}px`, position: "relative" }}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
       >
+        {/* Center drop zone (overlay) */}
+        <div
+          ref={setCenterRef}
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: "none",
+          }}
+        />
         {hasChildren ? (
           <button
             type="button"
@@ -148,6 +192,12 @@ export const GameObjectItem = memo(function GameObjectItem({
           <span className="flex-1 text-sm truncate">{gameObject.name}</span>
         )}
       </div>
+      {/* Below drop zone */}
+      <div
+        ref={setBelowRef}
+        className={cn("h-2 w-full", isOverBelow && "bg-blue-400")}
+        style={{ marginTop: 2, marginBottom: 2 }}
+      />
       {/* Render children if expanded */}
       {hasChildren && gameObject.isExpanded && childrenItems}
     </div>

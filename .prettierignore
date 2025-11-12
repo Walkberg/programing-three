@@ -1,0 +1,24 @@
+# Ignore Prettier output and common build artifacts
+node_modules/
+dist/
+build/
+coverage/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# TypeScript
+*.tsbuildinfo
+
+# Universal
+.env*
+*.log
+

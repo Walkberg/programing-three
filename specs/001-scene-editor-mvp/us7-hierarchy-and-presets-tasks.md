@@ -74,15 +74,14 @@
 
 **Purpose**: Enable drag-and-drop to create parent-child relationships
 
-- [ ] T126 [US7] Install @dnd-kit/core if not already installed (check package.json - already present per plan.md)
-- [ ] T127 [US7] Wrap HierarchyPanel with DndContext from @dnd-kit/core
-- [ ] T128 [US7] Make GameObjectItem draggable using useDraggable hook with GameObject ID as drag data
-- [ ] T129 [US7] Add drop zones to GameObjectItem using useDroppable hook with three zones: above (prepend sibling), below (append sibling), center (make child)
-- [ ] T130 [US7] Implement onDragOver handler to show visual drop indicator (blue line above/below, or highlight background for "as child")
-- [ ] T131 [US7] Implement onDragEnd handler in HierarchyPanel to call sceneStore.setParent() with validation
-- [ ] T132 [US7] Add circular parenting check before drop, show error toast if invalid ("Cannot create circular parent-child relationship")
-- [ ] T133 [US7] Support dropping GameObject outside all items (root level) to un-parent by creating drop zone at HierarchyPanel root
-
+ [X] T126 [US7] Install @dnd-kit/core if not already installed (check package.json - already present per plan.md)
+ [X] T127 [US7] Wrap HierarchyPanel with DndContext from @dnd-kit/core
+ [X] T128 [US7] Make GameObjectItem draggable using useDraggable hook with GameObject ID as drag data
+ [X] T129 [US7] Add drop zones to GameObjectItem using useDroppable hook with three zones: above (prepend sibling), below (append sibling), center (make child)
+ [X] T130 [US7] Implement onDragOver handler to show visual drop indicator (blue line above/below, or highlight background for "as child")
+ [X] T131 [US7] Implement onDragEnd handler in HierarchyPanel to call sceneStore.setParent() with validation
+ [X] T132 [US7] Add circular parenting check before drop, show error toast if invalid ("Cannot create circular parent-child relationship")
+ [X] T133 [US7] Support dropping GameObject outside all items (root level) to un-parent by creating drop zone at HierarchyPanel root
 **Checkpoint**: Drag-and-drop parenting functional with visual feedback
 
 ---

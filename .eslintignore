@@ -1,0 +1,23 @@
+# Ignore ESLint output and common build artifacts
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+*.tsbuildinfo
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# TypeScript
+*.tsbuildinfo
+
+# Universal
+.env*
+*.log
+
