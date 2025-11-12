@@ -3,9 +3,9 @@
 // Individual tab with icon, name, and active state (draggable)
 
 import React from "react";
-import { getPanelDefinition } from "./PanelRegistry";
 import { useDraggablePanel } from "@/hooks/useDragAndDrop";
 import type { PanelType } from "@/core/plugin/plugin.type";
+import { usePanelDefinition } from "./use-panel-definition";
 
 interface TabProps {
   panelType: PanelType;
@@ -23,7 +23,7 @@ interface TabProps {
  */
 export const Tab = React.memo<TabProps>(
   ({ panelType, zoneId, isActive, onClick, className = "" }) => {
-    const definition = getPanelDefinition(panelType);
+    const definition = usePanelDefinition(panelType);
     const Icon = definition.icon;
 
     const { draggableProps, isDragging } = useDraggablePanel(panelType, zoneId);

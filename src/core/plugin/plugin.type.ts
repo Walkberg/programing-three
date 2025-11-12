@@ -54,7 +54,8 @@ export type PanelType =
   | "code"
   | "inspector"
   | "console"
-  | "assets";
+  | "assets"
+  | string;
 
 /**
  * Panel Definition

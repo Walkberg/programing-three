@@ -291,3 +291,9 @@ export const singletonPluginManager = new PluginManager({
   autoCleanup: true,
   enableLogging: false,
 });
+
+export function registerPlugin<T extends IPlugin>(
+  PluginClass: new (manager: PluginManager) => T
+): string {
+  return singletonPluginManager.registerPlugin(PluginClass);
+}

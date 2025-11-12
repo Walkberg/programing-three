@@ -37,10 +37,6 @@ import {
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { LayoutManagerPopover } from "@/components/Docking/LayoutManagerPopover";
-import {
-  ToolbarActionsProvider,
-  useToolbarActionsContext,
-} from "@/components/ToolbarActions/ToolbarActionsProvider";
 
 import {
   DropdownMenu as GizmoDropdown,
@@ -50,7 +46,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { usePluginManager } from "@/features/plugin/PlugginProvider";
-import type { RegisteredToolbarAction } from "../ToolbarActions/types";
 import { useToolbarActions } from "@/features/plugin/pluggin-hook";
 import type { ToolbarAction } from "@/core/plugin/plugin.type";
 
@@ -286,282 +281,250 @@ export function Toolbar() {
   };
 
   return (
-    <ToolbarActionsProvider>
-      <div className="h-12 border-b border-border bg-card flex items-center px-4 gap-2">
-        {/* Play/Stop buttons */}
-        {mode === "edit" ? (
+    <div className="h-12 border-b border-border bg-card flex items-center px-4 gap-2">
+      {/* Play/Stop buttons */}
+      {mode === "edit" ? (
+        <Button
+          size="sm"
+          variant="default"
+          onClick={handlePlay}
+          disabled={isTransitioning}
+          className="gap-2"
+        >
+          {isTransitioning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+          Play
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={handleStop}
+          disabled={isTransitioning}
+          className="gap-2"
+        >
+          {isTransitioning ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Square className="h-4 w-4" />
+          )}
+          Stop
+        </Button>
+      )}
+
+      <div className="h-6 w-px bg-border mx-2" />
+
+      {/* Undo / Redo */}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => useHistoryStore.getState().undo()}
+        disabled={!useHistoryStore.getState().canUndo()}
+        className="gap-2"
+      >
+        Undo
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => useHistoryStore.getState().redo()}
+        disabled={!useHistoryStore.getState().canRedo()}
+        className="gap-2"
+      >
+        Redo
+      </Button>
+
+      {/* Gizmos dropdown */}
+      <GizmoDropdown>
+        <GizmoTrigger asChild>
           <Button
             size="sm"
-            variant="default"
-            onClick={handlePlay}
-            disabled={isTransitioning}
+            variant="secondary"
+            disabled={mode === "play"}
             className="gap-2"
           >
-            {isTransitioning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-            Play
+            Gizmos
           </Button>
-        ) : (
+        </GizmoTrigger>
+        <GizmoContent side="bottom">
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("translate")}
+          >
+            Translate (W)
+          </GizmoItem>
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("rotate")}
+          >
+            Rotate (E)
+          </GizmoItem>
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("scale")}
+          >
+            Scale (R)
+          </GizmoItem>
+          <GizmoItem
+            onClick={() => useEditorStore.getState().setGizmoMode("none")}
+          >
+            Off
+          </GizmoItem>
+        </GizmoContent>
+      </GizmoDropdown>
+
+      <div className="h-6 w-px bg-border mx-2" />
+
+      {/* Preset DropdownMenu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button
             size="sm"
-            variant="destructive"
-            onClick={handleStop}
-            disabled={isTransitioning}
+            variant="secondary"
+            disabled={mode === "play"}
             className="gap-2"
           >
-            {isTransitioning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Square className="h-4 w-4" />
-            )}
-            Stop
+            <Plus className="h-4 w-4" />
+            Add GameObject
           </Button>
-        )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom">
+          <DropdownMenuItem onClick={() => handleAddPreset("empty")}>
+            Empty
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("cube")}>
+            Cube
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("sphere")}>
+            Sphere
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("plane")}>
+            Plane
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("camera")}>
+            Camera
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAddPreset("light")}>
+            Light
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        <div className="h-6 w-px bg-border mx-2" />
+      <div className="h-6 w-px bg-border mx-2" />
 
-        {/* Undo / Redo */}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => useHistoryStore.getState().undo()}
-          disabled={!useHistoryStore.getState().canUndo()}
-          className="gap-2"
-        >
-          Undo
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => useHistoryStore.getState().redo()}
-          disabled={!useHistoryStore.getState().canRedo()}
-          className="gap-2"
-        >
-          Redo
-        </Button>
+      {/* Save/Load buttons */}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleSave}
+        disabled={mode === "play"}
+        className="gap-2"
+      >
+        <Save className="h-4 w-4" />
+        Save Scene
+      </Button>
 
-        {/* Gizmos dropdown */}
-        <GizmoDropdown>
-          <GizmoTrigger asChild>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={mode === "play"}
-              className="gap-2"
-            >
-              Gizmos
-            </Button>
-          </GizmoTrigger>
-          <GizmoContent side="bottom">
-            <GizmoItem
-              onClick={() =>
-                useEditorStore.getState().setGizmoMode("translate")
-              }
-            >
-              Translate (W)
-            </GizmoItem>
-            <GizmoItem
-              onClick={() => useEditorStore.getState().setGizmoMode("rotate")}
-            >
-              Rotate (E)
-            </GizmoItem>
-            <GizmoItem
-              onClick={() => useEditorStore.getState().setGizmoMode("scale")}
-            >
-              Scale (R)
-            </GizmoItem>
-            <GizmoItem
-              onClick={() => useEditorStore.getState().setGizmoMode("none")}
-            >
-              Off
-            </GizmoItem>
-          </GizmoContent>
-        </GizmoDropdown>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleLoad}
+        disabled={mode === "play"}
+        className="gap-2"
+      >
+        <FolderOpen className="h-4 w-4" />
+        Load Scene
+      </Button>
 
-        <div className="h-6 w-px bg-border mx-2" />
+      <div className="h-6 w-px bg-border mx-2" />
 
-        {/* Preset DropdownMenu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={mode === "play"}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add GameObject
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="bottom">
-            <DropdownMenuItem onClick={() => handleAddPreset("empty")}>
-              Empty
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddPreset("cube")}>
-              Cube
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddPreset("sphere")}>
-              Sphere
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddPreset("plane")}>
-              Plane
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddPreset("camera")}>
-              Camera
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddPreset("light")}>
-              Light
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Layout Manager Popover (US6) */}
+      <LayoutManagerPopover />
 
-        <div className="h-6 w-px bg-border mx-2" />
+      <PluginToolbar />
+      <ToolBarAction />
 
-        {/* Save/Load buttons */}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleSave}
-          disabled={mode === "play"}
-          className="gap-2"
-        >
-          <Save className="h-4 w-4" />
-          Save Scene
-        </Button>
-
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleLoad}
-          disabled={mode === "play"}
-          className="gap-2"
-        >
-          <FolderOpen className="h-4 w-4" />
-          Load Scene
-        </Button>
-
-        <div className="h-6 w-px bg-border mx-2" />
-
-        {/* Layout Manager Popover (US6) */}
-        <LayoutManagerPopover />
-
-        {/* Render registered toolbar actions (simple flat rendering for MVP) */}
-        <ToolbarActionsRenderer />
-        <PluginToolbar />
-        <ToolBarAction />
-
-        {/* Keyboard Shortcuts Tooltip (T081) */}
-        <div className="ml-auto">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-2">
-                  <Keyboard className="h-4 w-4" />
-                  Shortcuts
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <div className="space-y-2 text-sm">
-                  <div className="font-semibold border-b border-border pb-1">
-                    Keyboard Shortcuts
-                  </div>
-                  <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      Delete
-                    </kbd>
-                    <span>Delete selected GameObject</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      Space
-                    </kbd>
-                    <span>Toggle Play/Stop mode</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      W
-                    </kbd>
-                    <span>Translate Gizmo</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      E
-                    </kbd>
-                    <span>Rotate Gizmo</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      R
-                    </kbd>
-                    <span>Scale Gizmo</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      Q
-                    </kbd>
-                    <span>Toggle World/Local Gizmo Space</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      Ctrl+S
-                    </kbd>
-                    <span>Save scene</span>
-
-                    <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
-                      Ctrl+O
-                    </kbd>
-                    <span>Load scene</span>
-                  </div>
+      {/* Keyboard Shortcuts Tooltip (T081) */}
+      <div className="ml-auto">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" variant="ghost" className="gap-2">
+                <Keyboard className="h-4 w-4" />
+                Shortcuts
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <div className="space-y-2 text-sm">
+                <div className="font-semibold border-b border-border pb-1">
+                  Keyboard Shortcuts
                 </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    Delete
+                  </kbd>
+                  <span>Delete selected GameObject</span>
 
-        {/* Confirmation dialog for unsaved changes (T083) */}
-        <Dialog open={showLoadConfirm} onOpenChange={setShowLoadConfirm}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Unsaved Changes</DialogTitle>
-              <DialogDescription>
-                You have unsaved changes. Loading a scene will discard them. Are
-                you sure you want to continue?
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowLoadConfirm(false)}
-              >
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={performLoad}>
-                Load Anyway
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    Space
+                  </kbd>
+                  <span>Toggle Play/Stop mode</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    W
+                  </kbd>
+                  <span>Translate Gizmo</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    E
+                  </kbd>
+                  <span>Rotate Gizmo</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    R
+                  </kbd>
+                  <span>Scale Gizmo</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    Q
+                  </kbd>
+                  <span>Toggle World/Local Gizmo Space</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    Ctrl+S
+                  </kbd>
+                  <span>Save scene</span>
+
+                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
+                    Ctrl+O
+                  </kbd>
+                  <span>Load scene</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
-    </ToolbarActionsProvider>
-  );
-}
 
-function ToolbarActionsRenderer() {
-  const { actions } = useToolbarActionsContext();
-  return (
-    <div className="flex items-center gap-2">
-      {actions.map((a) => (
-        <Button
-          key={a.id}
-          onClick={() => {
-            // invoke subscribers
-            // use hook directly to call invoke; import dynamically to avoid cycles
-            const store =
-              require("@/state/toolbarActionsStore").useToolbarActionsStore;
-            store.getState().invoke(a.id, a.payload);
-          }}
-          title={a.title}
-        >
-          {a.title}
-        </Button>
-      ))}
+      {/* Confirmation dialog for unsaved changes (T083) */}
+      <Dialog open={showLoadConfirm} onOpenChange={setShowLoadConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes. Loading a scene will discard them. Are
+              you sure you want to continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLoadConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={performLoad}>
+              Load Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

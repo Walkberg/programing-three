@@ -75,6 +75,16 @@ export function getDefaultLayout(): Zone {
   return rootZone;
 }
 
+const findFirstLeafZone = (zone: any): any => {
+  if (zone.type === "leaf") {
+    return zone;
+  }
+  if (zone.type === "split" && zone.children) {
+    return findFirstLeafZone(zone.children[0]);
+  }
+  return null;
+};
+
 export const useLayoutStore = create<LayoutStore>()(
   devtools(
     persist(
@@ -83,6 +93,27 @@ export const useLayoutStore = create<LayoutStore>()(
         dragState: null,
 
         setLayout: (zone) => set({ rootZone: zone }),
+
+        addDockerPanel: (panelId: PanelType) => {
+          const { rootZone } = get();
+          const firstLeaf = findFirstLeafZone(rootZone);
+          if (firstLeaf) {
+            // Generate unique panel instance ID
+            // Format: panelType-uuid (e.g., "hierarchy-a1b2c3d4")
+            const uniquePanelId = `${panelId}-${uuidv4().slice(0, 8)}` as any;
+
+            // Add panel to the first leaf zone
+            useLayoutStore.getState().addTabToZone(uniquePanelId, firstLeaf.id);
+
+            toast({
+              title: "Panel Added",
+              description: ` added to layout`,
+            });
+
+            return true;
+          }
+          return false;
+        },
 
         resetLayout: () => {
           set({ rootZone: getDefaultLayout(), dragState: null });

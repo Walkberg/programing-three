@@ -66,7 +66,6 @@ export class DockingPanelPlugin extends BasePlugin {
       defaultSize: { width: 300 },
       description: "Component properties editor",
     });
-
     this.registerPanel("console", {
       id: "console",
       title: "Console",
@@ -75,7 +74,6 @@ export class DockingPanelPlugin extends BasePlugin {
       defaultSize: { height: 200 },
       description: "Log messages and errors",
     });
-
     this.registerPanel("assets", {
       id: "assets",
       title: "Assets",

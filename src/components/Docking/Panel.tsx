@@ -3,9 +3,9 @@
 // Wraps panel content with header and provides drag functionality
 
 import React from "react";
-import { getPanelDefinition } from "./PanelRegistry";
 import { PanelHeader } from "./PanelHeader";
 import type { PanelType } from "@/core/plugin/plugin.type";
+import { usePanelDefinition } from "./use-panel-definition";
 
 interface PanelProps {
   panelType: PanelType;
@@ -19,7 +19,7 @@ interface PanelProps {
  */
 export const Panel = React.memo<PanelProps>(
   ({ panelType, zoneId, className = "" }) => {
-    const definition = getPanelDefinition(panelType);
+    const definition = usePanelDefinition(panelType);
     const PanelContent = definition.component;
 
     return (

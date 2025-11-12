@@ -1,6 +1,6 @@
 import type {
   Command,
-  PanelConfig,
+  PanelDefinition,
   PluginInfo,
   ToolbarAction,
 } from "@/core/plugin/plugin.type";
@@ -33,7 +33,7 @@ export const useCommand = <T = any>(commandId: string) => {
 /**
  * Hook pour accéder aux panels
  */
-export const usePanels = (): Array<PanelConfig & { id: string }> => {
+export const usePanels = (): Array<PanelDefinition & { id: string }> => {
   const manager = usePluginManager();
   return manager.getPanels();
 };

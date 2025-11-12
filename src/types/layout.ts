@@ -164,6 +164,8 @@ export interface LayoutActions {
   /** Reset layout to default configuration */
   resetLayout: () => void;
 
+  addDockerPanel: (panelId: PanelType) => boolean;
+
   // Drag operations
   /** Start dragging a panel */
   startDrag: (panelId: PanelType, zoneId: string) => void;

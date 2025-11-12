@@ -10,8 +10,3 @@ export { TabBar } from "./TabBar";
 export { Tab } from "./Tab";
 export { DropZone } from "./DropZone";
 export { Splitter } from "./Splitter";
-export {
-  getPanelDefinition,
-  getAllPanelDefinitions,
-  isValidPanelType,
-} from "./PanelRegistry";

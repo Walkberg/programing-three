@@ -14,8 +14,8 @@ import { useLayoutStore } from "@/state/layoutStore";
 import { Zone } from "./Zone";
 import { useDragEndHandler } from "@/hooks/useDragAndDrop";
 import { useAutoSaveLayout } from "@/hooks/useAutoSaveLayout";
-import { getPanelDefinition } from "./PanelRegistry";
 import { initializeDefaultPresets } from "@/utils/defaultPresets";
+import { usePanelDefinition } from "./use-panel-definition";
 
 interface DockingLayoutProps {
   className?: string;
@@ -109,7 +109,7 @@ DockingLayout.displayName = "DockingLayout";
  * Shows a preview of the panel being dragged
  */
 const DragPreview: React.FC<{ panelId: string }> = ({ panelId }) => {
-  const definition = getPanelDefinition(panelId as any);
+  const definition = usePanelDefinition(panelId);
   const Icon = definition.icon;
 
   return (

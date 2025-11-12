@@ -3,7 +3,6 @@
 
 import { RotateCcw, Save, Settings2 } from "lucide-react";
 import { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -14,48 +13,29 @@ import { Separator } from "@/components/ui/separator";
 import { useLayoutStore } from "@/state/layoutStore";
 import { PresetList } from "./PresetList";
 import { SaveLayoutDialog } from "./SaveLayoutDialog";
-import { getAllPanelDefinitions } from "./PanelRegistry";
-import { toast } from "@/hooks/use-toast";
+import { usePanels } from "@/features/plugin/pluggin-hook";
+import type { PanelType } from "@/core/plugin/plugin.type";
 
 export function LayoutManagerPopover() {
   const [open, setOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
-  const { listPresets, getActivePresetId, loadPreset, resetLayout, rootZone } =
-    useLayoutStore();
+  const {
+    listPresets,
+    getActivePresetId,
+    loadPreset,
+    resetLayout,
+    addDockerPanel,
+  } = useLayoutStore();
 
   const presets = listPresets();
   const activePresetId = getActivePresetId();
-  const allPanels = getAllPanelDefinitions();
+  const allPanels = usePanels();
 
   // Find first leaf zone to add panels to
-  const findFirstLeafZone = (zone: any): any => {
-    if (zone.type === "leaf") {
-      return zone;
-    }
-    if (zone.type === "split" && zone.children) {
-      return findFirstLeafZone(zone.children[0]);
-    }
-    return null;
-  };
 
-  const handleAddPanel = (panelId: string) => {
-    const firstLeaf = findFirstLeafZone(rootZone);
-    if (firstLeaf) {
-      // Generate unique panel instance ID
-      // Format: panelType-uuid (e.g., "hierarchy-a1b2c3d4")
-      const uniquePanelId = `${panelId}-${uuidv4().slice(0, 8)}` as any;
-
-      // Add panel to the first leaf zone
-      useLayoutStore.getState().addTabToZone(uniquePanelId, firstLeaf.id);
-      toast({
-        title: "Panel Added",
-        description: `${
-          allPanels.find((p) => p.id === panelId)?.title
-        } added to layout`,
-      });
-    }
-  };
+  const handleAddPanel = (panelId: string) =>
+    addDockerPanel(panelId as PanelType);
 
   const handlePresetLoad = (id: string) => {
     loadPreset(id);
