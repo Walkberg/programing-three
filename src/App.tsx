@@ -2,7 +2,6 @@ import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import "./App.css";
-import { useGlobalShortcuts } from "@/features/keybinding/useGlobalShortcuts";
 import { PluginProvider } from "./features/plugin/PlugginProvider";
 import {
   registerPlugin,
@@ -26,8 +25,6 @@ const EditorLayout = lazy(() =>
 );
 
 function App() {
-  useGlobalShortcuts();
-
   return (
     <>
       <Suspense fallback={<LoadingSpinner />}>

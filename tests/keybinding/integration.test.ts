@@ -5,6 +5,7 @@ import {
   singletonPluginManager,
 } from "@/core/plugin/plugin-manager";
 import { KeybindingPlugin } from "@/plugins/keybinding";
+import { ViewportGizmoPlugin } from "@/plugins/viewport-gizmo/viewport-gizmo.plugin";
 
 describe("Keybinding Plugin integration", () => {
   afterEach(() => {
@@ -21,9 +22,11 @@ describe("Keybinding Plugin integration", () => {
     editor.setGizmoMode("none");
     editor.setMode("edit");
 
-    // Register plugin
-    const id = registerPlugin(KeybindingPlugin);
-    expect(singletonPluginManager.hasPlugin(id)).toBe(true);
+    // Register keybinding plugin and viewport gizmo plugin so commands exist
+    const idKb = registerPlugin(KeybindingPlugin);
+    const idGizmo = registerPlugin(ViewportGizmoPlugin);
+    expect(singletonPluginManager.hasPlugin(idKb)).toBe(true);
+    expect(singletonPluginManager.hasPlugin(idGizmo)).toBe(true);
 
     // In test environments that don't provide `window`/DOM event dispatch
     // (node), the KeybindingPlugin won't attach a global listener. Instead

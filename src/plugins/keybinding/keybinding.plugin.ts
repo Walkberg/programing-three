@@ -19,6 +19,9 @@ export class KeybindingPlugin extends BasePlugin {
   private _onKeyDown = this._handleKeyDown.bind(this);
   private _lastHandled = 0;
   private _opts = defaultKeybindingOptions;
+  /** Map from normalized key string -> { commandId, args } */
+  private _keyToBinding: Map<string, { commandId: string; args?: any[] }> =
+    new Map();
 
   constructor(manager: PluginManager) {
     super(manager);
@@ -32,35 +35,17 @@ export class KeybindingPlugin extends BasePlugin {
   }
 
   register(): void {
-    // Register commands that operate on gizmo/editor state. The command
-    // implementations call into the editor store (via getState) so that tests
-    // and other plugins can call `executeCommand` and have a single source of truth.
-    this.registerCommand("gizmo.setMode", (mode: string) => {
-      const setGizmoMode = useEditorStore.getState().setGizmoMode;
-      if (setGizmoMode) setGizmoMode(mode as any);
-    });
-
-    this.registerCommand("gizmo.toggleSpace", () => {
-      const store = useEditorStore.getState();
-      const next = store.gizmoSpace === "world" ? "local" : "world";
-      store.setGizmoSpace(next as any);
-    });
-
-    this.registerCommand("gizmo.off", () => {
-      useEditorStore.getState().setGizmoMode("none");
-    });
-
     // Attach global key listener (reads shortcuts from the plugin-scoped store)
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("keydown", this._onKeyDown);
     }
 
-    // Keep a subscription to the shortcuts store so that we can react if
-    // a test or other code changes shortcuts at runtime (not strictly needed
-    // for the listener, but allowed for future extensions).
+    // Build the initial mapping and subscribe to changes so we only compute
+    // a single lookup table instead of checking all shortcuts on each key.
+    this._rebuildMap();
     if ((useKeybindingStore as any).subscribe) {
       this._unsubStore = (useKeybindingStore as any).subscribe(() => {
-        // no-op for now; we read the latest shortcuts on each key event
+        this._rebuildMap();
       });
     }
   }
@@ -77,6 +62,7 @@ export class KeybindingPlugin extends BasePlugin {
       }
       this._unsubStore = null;
     }
+    this._keyToBinding.clear();
   }
 
   private _handleKeyDown(e: KeyboardEvent) {
@@ -86,10 +72,8 @@ export class KeybindingPlugin extends BasePlugin {
     if (minInterval > 0 && now - this._lastHandled < minInterval) return;
     this._lastHandled = now;
     try {
-      const mode = useEditorStore.getState().mode;
-      if (mode !== "edit") return;
-
       const active = document.activeElement as HTMLElement | null;
+
       if (
         active &&
         (active.tagName === "INPUT" ||
@@ -100,44 +84,14 @@ export class KeybindingPlugin extends BasePlugin {
         return;
 
       const key = (e.key || "").toLowerCase();
-      const shortcuts =
-        useKeybindingStore.getState().shortcuts || defaultShortcuts;
 
-      // Map keys to command ids (safe: check existence before executing)
-      if (key === (shortcuts["viewport.translate"] || "").toLowerCase()) {
-        if (this.manager.hasCommand("gizmo.setMode")) {
+      // Single lookup: if a mapping exists for this key, execute it.
+      const mapping = this._keyToBinding.get(key);
+      if (mapping) {
+        if (this.manager.hasCommand(mapping.commandId)) {
           e.preventDefault();
-          this.safeExecute("gizmo.setMode", "translate");
+          this.safeExecute(mapping.commandId, ...(mapping.args || []));
         }
-        return;
-      }
-      if (key === (shortcuts["viewport.rotate"] || "").toLowerCase()) {
-        if (this.manager.hasCommand("gizmo.setMode")) {
-          e.preventDefault();
-          this.safeExecute("gizmo.setMode", "rotate");
-        }
-        return;
-      }
-      if (key === (shortcuts["viewport.scale"] || "").toLowerCase()) {
-        if (this.manager.hasCommand("gizmo.setMode")) {
-          e.preventDefault();
-          this.safeExecute("gizmo.setMode", "scale");
-        }
-        return;
-      }
-      if (key === (shortcuts["viewport.toggleSpace"] || "").toLowerCase()) {
-        if (this.manager.hasCommand("gizmo.toggleSpace")) {
-          e.preventDefault();
-          this.safeExecute("gizmo.toggleSpace");
-        }
-        return;
-      }
-      if (key === (shortcuts["viewport.off"] || "").toLowerCase()) {
-        if (this.manager.hasCommand("gizmo.off")) {
-          e.preventDefault();
-          this.safeExecute("gizmo.off");
-        }
-        return;
       }
     } catch (err) {
       // Keep keyboard handling resilient; swallow errors
@@ -164,6 +118,37 @@ export class KeybindingPlugin extends BasePlugin {
     } catch (err) {
       (this.manager as any).log?.("error", "safeExecute error:", err);
     }
+  }
+
+  /**
+   * Build a single key -> command mapping from the configured shortcuts.
+   */
+  private _rebuildMap() {
+    this._keyToBinding.clear();
+    const shortcuts =
+      useKeybindingStore.getState().shortcuts || defaultShortcuts;
+
+    Object.entries(shortcuts).forEach(([key, value]) => {
+      this._keyToBinding.set(value, {
+        commandId: key,
+      });
+    });
+  }
+
+  /**
+   * Allow other code to register runtime shortcut mappings with this plugin.
+   * Note: this is plugin-local and does not modify persisted user shortcuts.
+   */
+  public registerShortcut(key: string, commandId: string, args?: any[]) {
+    if (!key) return () => {};
+    const k = key.toLowerCase();
+    this._keyToBinding.set(k, { commandId, args });
+    return () => this._keyToBinding.delete(k);
+  }
+
+  public unregisterShortcut(key: string) {
+    if (!key) return;
+    this._keyToBinding.delete(key.toLowerCase());
   }
 }
 
