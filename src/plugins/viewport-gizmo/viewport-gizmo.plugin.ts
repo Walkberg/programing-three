@@ -52,7 +52,7 @@ export class ViewportGizmoPlugin extends BasePlugin {
     this.registerCommand(VIEWPORT_TOGGLE_SPACE, () => {
       const store = useEditorStore.getState();
       const next = store.gizmoSpace === "world" ? "local" : "world";
-      store.setGizmoSpace(next as any);
+      store.setGizmoSpace(next);
     });
 
     this.registerCommand(VIEWPORT_OFF, () => {

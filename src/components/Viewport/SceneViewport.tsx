@@ -58,7 +58,6 @@ function UpdateLoop() {
       }
     }
 
-    // Otherwise use inline code
     if (component.code && component.code.trim()) {
       return {
         code: component.code,
@@ -69,7 +68,6 @@ function UpdateLoop() {
     return null;
   };
 
-  // T044: Initialize CodeComponents when play mode starts
   useEffect(() => {
     if (mode === "play") {
       // Find all CodeComponents that haven't been initialized
@@ -132,14 +130,12 @@ if (typeof start === 'function') {
         });
       });
     } else {
-      // T046: Clear initialized components when leaving play mode
       initializedComponentsRef.current.clear();
       CodeExecutor.cancelAll();
     }
   }, [mode, gameObjects, assets]);
 
   useFrame((state) => {
-    // Only run update loop in play mode
     if (mode !== "play") {
       lastTimeRef.current = state.clock.getElapsedTime();
       return;
