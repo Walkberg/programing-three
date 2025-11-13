@@ -8,6 +8,7 @@ import type {
   PluginManagerOptions,
   ToolbarAction,
 } from "./plugin.type";
+import { KeybindingAPI } from "./keybinding-api";
 
 export class PluginManager {
   private plugins: Map<string, IPlugin> = new Map();
@@ -16,6 +17,7 @@ export class PluginManager {
   private panels: Map<string, PanelDefinition> = new Map();
   private listeners: Set<PluginListener> = new Set();
   private options: PluginManagerOptions;
+  public keybinding: KeybindingAPI;
 
   constructor(options: PluginManagerOptions = {}) {
     this.options = {
@@ -23,6 +25,10 @@ export class PluginManager {
       enableLogging: false,
       ...options,
     };
+
+    // Wire up the keybinding namespace to a dedicated helper class so the
+    // implementation is not inline on the manager itself.
+    this.keybinding = new KeybindingAPI(this);
   }
 
   /**
@@ -262,6 +268,35 @@ export class PluginManager {
    */
   public getPluginCount(): number {
     return this.plugins.size;
+  }
+
+  /**
+   * Register a runtime shortcut mapping with the Keybinding plugin.
+   * Returns an unregister function when successful, otherwise undefined.
+   */
+  public registerShortcut(
+    key: string,
+    commandId: string,
+    args?: any[]
+  ): (() => void) | undefined {
+    const kb = this.plugins.get("plugin.keybinding") as any;
+    if (kb && typeof kb.registerShortcut === "function") {
+      return kb.registerShortcut(key, commandId, args);
+    }
+    this.log("warn", "Keybinding plugin not available to register shortcut");
+    return undefined;
+  }
+
+  /**
+   * Unregister a runtime shortcut mapping previously registered.
+   */
+  public unregisterShortcut(key: string): void {
+    const kb = this.plugins.get("plugin.keybinding") as any;
+    if (kb && typeof kb.unregisterShortcut === "function") {
+      kb.unregisterShortcut(key);
+      return;
+    }
+    this.log("warn", "Keybinding plugin not available to unregister shortcut");
   }
 
   /**
