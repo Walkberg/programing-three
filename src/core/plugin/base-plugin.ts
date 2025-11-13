@@ -4,6 +4,7 @@ import type {
   IPlugin,
   PanelDefinition,
   ToolbarAction,
+  PluginManifest,
 } from "./plugin.type";
 
 export abstract class BasePlugin implements IPlugin {
@@ -11,10 +12,20 @@ export abstract class BasePlugin implements IPlugin {
   public abstract name: string;
   public description?: string;
   public version?: string;
+  /** Optional manifest describing requested capabilities */
+  public manifest?: PluginManifest;
   public manager: PluginManager;
 
   constructor(manager: PluginManager) {
     this.manager = manager;
+  }
+
+  /**
+   * Return the requested capabilities declared in the manifest.
+   * Plugins may override by setting `this.manifest` in their constructor.
+   */
+  public getRequestedCapabilities(): string[] {
+    return this.manifest?.requestedCapabilities || [];
   }
 
   abstract register(): void;

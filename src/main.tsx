@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
+import { registerPlugin } from "@/core/plugin/plugin-manager";
+import { KeybindingPlugin } from "@/plugins/keybinding";
 
 // WebGL 2.0 feature detection (T077)
 function checkWebGLSupport(): boolean {
@@ -68,6 +70,16 @@ if (!checkWebGLSupport()) {
     </div>
   `;
 } else {
+  // Register core plugins before mounting the app so their lifecycle
+  // hooks are active during initial render (Keybinding plugin provides
+  // global keyboard behavior mapped to editor commands).
+  try {
+    registerPlugin(KeybindingPlugin);
+  } catch (err) {
+    // Do not block application startup on plugin registration failure
+    console.warn("Plugin registration failed:", err);
+  }
+
   createRoot(rootElement).render(
     <StrictMode>
       <ErrorBoundary>

@@ -102,6 +102,8 @@ export function Toolbar() {
     }
   };
 
+  const pluginManager = usePluginManager();
+
   const handleSave = () => {
     try {
       const scene = new Scene({ gameObjects });
@@ -350,23 +352,27 @@ export function Toolbar() {
         </GizmoTrigger>
         <GizmoContent side="bottom">
           <GizmoItem
-            onClick={() => useEditorStore.getState().setGizmoMode("translate")}
+            onClick={() =>
+              pluginManager.executeCommand("gizmo.setMode", "translate")
+            }
           >
             Translate (W)
           </GizmoItem>
           <GizmoItem
-            onClick={() => useEditorStore.getState().setGizmoMode("rotate")}
+            onClick={() =>
+              pluginManager.executeCommand("gizmo.setMode", "rotate")
+            }
           >
             Rotate (E)
           </GizmoItem>
           <GizmoItem
-            onClick={() => useEditorStore.getState().setGizmoMode("scale")}
+            onClick={() =>
+              pluginManager.executeCommand("gizmo.setMode", "scale")
+            }
           >
             Scale (R)
           </GizmoItem>
-          <GizmoItem
-            onClick={() => useEditorStore.getState().setGizmoMode("none")}
-          >
+          <GizmoItem onClick={() => pluginManager.executeCommand("gizmo.off")}>
             Off
           </GizmoItem>
         </GizmoContent>
@@ -530,7 +536,7 @@ export function Toolbar() {
 
 export const PluginToolbar = () => {
   const tss = usePluginManager();
-  const aa = useToolbarActions();
+  useToolbarActions();
 
   const plugins = tss.getPlugins();
 

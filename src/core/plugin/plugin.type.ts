@@ -87,6 +87,27 @@ export interface PluginInfo {
 export type PluginListener = () => void;
 
 /**
+ * Plugin manifest and capabilities
+ * Plugins should declare their `PluginManifest` when appropriate.
+ * Note: Keybinding functionality is intended to be provided by a dedicated plugin
+ * which maps keyboard shortcuts to existing editor commands via `executeCommand`.
+ */
+export type RequestedCapabilities =
+  | "panels"
+  | "commands"
+  | "toolbar"
+  | "keybindings"
+  | string;
+
+export interface PluginManifest {
+  id: string;
+  name: string;
+  version?: string;
+  description?: string;
+  requestedCapabilities?: RequestedCapabilities[];
+}
+
+/**
  * Options pour le PluginManager
  */
 export interface PluginManagerOptions {

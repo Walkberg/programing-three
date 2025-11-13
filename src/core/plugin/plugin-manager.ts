@@ -118,6 +118,11 @@ export class PluginManager {
 
   /**
    * Exécuter une commande
+   *
+   * Note: `executeCommand` is the canonical API for plugins to invoke editor
+   * behavior. Keybinding plugins should map keys to existing command IDs and
+   * call `executeCommand(commandId, ...args)` rather than mutating internal
+   * stores directly. This keeps the PluginManager surface minimal and stable.
    */
   public executeCommand<T = any>(
     commandId: string,
