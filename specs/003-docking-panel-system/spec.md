@@ -9,6 +9,12 @@
 
 The user wants to transform the current fixed editor layout into a flexible docking panel system similar to Unity, VS Code, or Unreal Engine. Users should be able to drag panels (Hierarchy, Scene, Game, Code, Inspector, Console, Assets) to different zones of the editor, create tabbed groups, and customize their workspace layout according to their workflow preferences.
 
+## Clarifications
+
+### Session 2025-11-13
+
+- Q: Preferred plugin execution model for extending the editor (trusted / capability-restricted / sandbox / signed)? → A: B (Capabilities-restricted)
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Default Panel Layout (Priority: P1) 🎯 MVP
@@ -215,6 +221,19 @@ A user wants to save and manage multiple layout configurations (presets) for dif
 - **Persistence**: localStorage with JSON serialization
 - **Animation**: CSS transitions for smooth panel movements
 - **UI Components**: shadcn/ui components for tab bars, headers, buttons
+
+### Plugin Architecture
+
+Decision: **Capability-restricted plugin model** (see Clarifications session above).
+
+- Overview: Plugins will run inside the application process but must interact with the editor only through a small, well-documented capabilities API exposed by the `PluginManager` (for example: `registerPanel`, `registerCommand`, `registerToolbarAction`, `getPanels`, `getCommands`).
+- Rules & rationale:
+	- Plugins SHOULD NOT access internal Zustand stores or directly manipulate internal components. Instead, expose targeted API methods on `PluginManager` which encapsulate store interactions and side effects.
+	- Each plugin must provide a minimal manifest when registering (id, name, version, requestedCapabilities). `PluginManager` will validate requested capabilities and may refuse registration if unsupported.
+	- `PluginManager` methods must perform input validation and catch plugin-origin errors to avoid crashing the host app.
+	- Prefer exposing higher-level commands (e.g., `commands.execute('layout.addTab', { panelId, zoneId })`) rather than raw store mutation, improving testability and future policy enforcement.
+
+Benefits: Balances developer ergonomics and safety — allows rich extension without the complexity of full sandboxing while reducing risk of arbitrary state corruption by plugins.
 
 ### Performance Considerations
 
