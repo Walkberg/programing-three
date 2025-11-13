@@ -13,8 +13,6 @@ export const PluginEditorPanel: React.FC = () => {
 
   const plugins = pluginManager.getPlugins();
 
-  const command = pluginManager.getCommands();
-
   const handleRegisterPlugin = (pluginId: string) => {
     pluginManager.executeCommand<string>("register-plugin", pluginId);
   };

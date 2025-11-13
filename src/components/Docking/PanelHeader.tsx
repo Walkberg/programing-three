@@ -5,8 +5,8 @@
 import React from "react";
 import { GripVertical } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { PanelType } from "@/types/layout";
 import { useDraggablePanel } from "@/hooks/useDragAndDrop";
+import type { PanelType } from "@/core/plugin/plugin.type";
 
 interface PanelHeaderProps {
   panelType: PanelType;
