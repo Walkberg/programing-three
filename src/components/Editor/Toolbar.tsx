@@ -301,7 +301,6 @@ export function Toolbar() {
       ) : (
         <Button
           size="sm"
-          variant="destructive"
           onClick={handleStop}
           disabled={isTransitioning}
           className="gap-2"
