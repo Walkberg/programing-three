@@ -1,4 +1,3 @@
-import type { ComponentType } from "react";
 import type { PluginManager } from "./plugin-manager";
 import type { LucideIcon } from "lucide-react";
 
