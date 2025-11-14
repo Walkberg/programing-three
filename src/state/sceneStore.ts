@@ -1,123 +1,24 @@
-export const PRESET_CONFIGS: Record<
-  string,
-  { name: string; components: ComponentData[] }
-> = {
-  empty: {
-    name: "Empty",
-    components: [
-      {
-        id: "transform",
-        type: "Transform",
-        enabled: true,
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      },
-    ],
-  },
-  cube: {
-    name: "Cube",
-    components: [
-      {
-        id: "transform",
-        type: "Transform",
-        enabled: true,
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      },
-      {
-        id: "meshRenderer",
-        type: "MeshRenderer",
-        enabled: true,
-        geometry: "cube",
-        color: "#cccccc",
-        visible: true,
-      },
-    ],
-  },
-  sphere: {
-    name: "Sphere",
-    components: [
-      {
-        id: "transform",
-        type: "Transform",
-        enabled: true,
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      },
-      {
-        id: "meshRenderer",
-        type: "MeshRenderer",
-        enabled: true,
-        geometry: "sphere",
-        color: "#cccccc",
-        visible: true,
-      },
-    ],
-  },
-  plane: {
-    name: "Plane",
-    components: [
-      {
-        id: "transform",
-        type: "Transform",
-        enabled: true,
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      },
-      {
-        id: "meshRenderer",
-        type: "MeshRenderer",
-        enabled: true,
-        geometry: "plane",
-        color: "#cccccc",
-        visible: true,
-      },
-    ],
-  },
-  camera: {
-    name: "Camera",
-    components: [
-      {
-        id: "transform",
-        type: "Transform",
-        enabled: true,
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      },
-      // Camera component placeholder
-    ],
-  },
-  light: {
-    name: "Light",
-    components: [
-      {
-        id: "transform",
-        type: "Transform",
-        enabled: true,
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      },
-      // Light component placeholder
-    ],
-  },
-};
 import { create } from "zustand";
+import { Scene } from "@/core/Scene";
 import { GameObject } from "@/core/GameObject";
 import { Component } from "@/core/Component";
 import type { GameObjectData, Vector3, ComponentData } from "@/types";
 import { useEditorStore } from "./editorStore";
+import { PRESET_CONFIGS } from "./presetConfig";
 
 interface SceneStore {
+  // Core scene instance (source of truth)
+  scene: Scene;
+
+  // Cached data for React rendering (updated via scene events)
   gameObjects: GameObjectData[];
   gameObjectMap: Map<string, GameObjectData>;
 
-  addGameObject: (name?: string, parentId?: string | null) => string;
+  // Subscriptions cleanup
+  unsubscribers: Array<() => void>;
+
+  // GameObject management
+  addGameObject: (nameOrGameObject: string | GameObject, parentId?: string | null) => string;
   removeGameObject: (id: string, deleteChildren?: boolean) => void;
   updateGameObject: (id: string, updates: Partial<GameObjectData>) => void;
   updateTransform: (
@@ -126,6 +27,8 @@ interface SceneStore {
     rotation?: Vector3,
     scale?: Vector3
   ) => void;
+
+  // Component management
   addComponent: (gameObjectId: string, component: Component) => void;
   updateComponent: (
     gameObjectId: string,
@@ -133,425 +36,396 @@ interface SceneStore {
     updates: Partial<ComponentData>
   ) => void;
   removeComponent: (gameObjectId: string, componentId: string) => void;
+
+  // Hierarchy
   setParent: (id: string, newParentId: string | null) => boolean;
   canSetParent: (id: string, newParentId: string | null) => boolean;
   toggleExpanded: (id: string) => void;
+  reorderSibling: (
+    draggedId: string,
+    targetId: string,
+    position: "above" | "below"
+  ) => void;
+
+  // Scene operations
   setScene: (gameObjects: GameObjectData[]) => void;
   clear: () => void;
   createGameObjectFromPreset: (
     presetType: string,
     parentId?: string | null
   ) => string | null;
-  reorderSibling: (
-    draggedId: string,
-    targetId: string,
-    position: "above" | "below"
-  ) => void;
+
+  // Play mode
+  startPlayMode: () => void;
+  stopPlayMode: () => void;
+
+  // Lifecycle
+  initializeScene: () => void;
+  syncFromScene: () => void;
+  dispose: () => void;
 }
 
-// Helper to mark scene as dirty (T083)
+// Helper to mark scene as dirty
 const markDirty = () => {
   useEditorStore.getState().setIsDirty(true);
 };
 
-export const useSceneStore = create<SceneStore>((set, get) => ({
-  // T110: createGameObjectFromPreset action
-  createGameObjectFromPreset: (
-    presetType: string,
-    parentId?: string | null
-  ) => {
-    const config = PRESET_CONFIGS[presetType];
-    if (!config) return null;
-    if (presetType === "camera" || presetType === "light") {
-      console.warn(`${config.name} components coming soon`);
-      return null;
-    }
-    let name = config.name;
-    if (presetType === "empty") {
-      const state = get();
-      const count = state.gameObjects.filter((go) =>
-        go.name.startsWith("Empty")
-      ).length;
-      name = count === 0 ? "Empty" : `Empty (${count + 1})`;
-    }
-    return get().addGameObject(name, parentId);
-  },
+export const useSceneStore = create<SceneStore>((set, get) => {
+  const scene = new Scene();
+  const unsubscribers: Array<() => void> = [];
 
-  setParent: (id: string, newParentId: string | null) => {
-    const state = get();
-    // Validation: cannot set parent to self or circular
-    if (id === newParentId) return false;
-    if (!state.canSetParent(id, newParentId)) return false;
-
-    set((currentState) => {
-      const go = currentState.gameObjectMap.get(id);
-      if (!go) return {};
-
-      const oldParentId = go.parentId;
-      let updatedGameObjects = [...currentState.gameObjects];
-      let updatedMap = new Map(currentState.gameObjectMap);
-
-      if (oldParentId && updatedMap.has(oldParentId)) {
-        const oldParent = updatedMap.get(oldParentId)!;
-        const newOldParent = {
-          ...oldParent,
-          children: oldParent.children.filter((cid) => cid !== id),
-        };
-        updatedMap.set(oldParentId, newOldParent);
-        updatedGameObjects = updatedGameObjects.map((obj) =>
-          obj.id === oldParentId ? newOldParent : obj
-        );
-      }
-
-      if (newParentId && updatedMap.has(newParentId)) {
-        const newParent = updatedMap.get(newParentId)!;
-        const filteredChildren = newParent.children.filter((cid) => cid !== id);
-        const newChildren = [...filteredChildren, id];
-        const newNewParent = {
-          ...newParent,
-          children: newChildren,
-        };
-        updatedMap.set(newParentId, newNewParent);
-        updatedGameObjects = updatedGameObjects.map((obj) =>
-          obj.id === newParentId ? newNewParent : obj
-        );
-      }
-
-      const newGo = { ...go, parentId: newParentId };
-      updatedMap.set(id, newGo);
-      updatedGameObjects = updatedGameObjects.map((obj) =>
-        obj.id === id ? newGo : obj
-      );
-
-      return {
-        gameObjects: updatedGameObjects,
-        gameObjectMap: updatedMap,
-      };
-    });
-    markDirty();
-    return true;
-  },
-  reorderSibling: (draggedId, targetId, position) => {
-    set((state) => {
-      const draggedObj = state.gameObjectMap.get(draggedId);
-      const targetObj = state.gameObjectMap.get(targetId);
-
-      if (!draggedObj || !targetObj) return {};
-
-      // Ils doivent avoir le même parent
-      if (draggedObj.parentId !== targetObj.parentId) {
-        console.warn("Cannot reorder: objects have different parents");
-        return {};
-      }
-
-      const parentId = draggedObj.parentId;
-
-      // Si c'est à la racine
-      if (parentId === null) {
-        // Filtrer les objets racine uniquement
-        let rootObjects = state.gameObjects.filter(
-          (obj) => obj.parentId === null && obj.id !== draggedId
-        );
-
-        const targetIdx = rootObjects.findIndex((obj) => obj.id === targetId);
-        if (targetIdx === -1) return {};
-
-        // Insérer selon la position
-        const insertIdx = position === "above" ? targetIdx : targetIdx + 1;
-        rootObjects.splice(insertIdx, 0, draggedObj);
-
-        // Reconstruire le tableau complet en préservant l'ordre des enfants
-        const nonRootObjects = state.gameObjects.filter(
-          (obj) => obj.parentId !== null
-        );
-
-        return {
-          gameObjects: [...rootObjects, ...nonRootObjects],
-        };
-      }
-
-      // Si c'est dans un parent
-      const parent = state.gameObjectMap.get(parentId);
-      if (!parent) return {};
-
-      // Réordonner les children
-      let newChildren = parent.children.filter((cid) => cid !== draggedId);
-      const targetIdx = newChildren.indexOf(targetId);
-
-      if (targetIdx === -1) return {};
-
-      const insertIdx = position === "above" ? targetIdx : targetIdx + 1;
-      newChildren.splice(insertIdx, 0, draggedId);
-
-      // Créer un nouveau parent avec les children réordonnés
-      const newParent = { ...parent, children: newChildren };
-
-      // Mettre à jour le gameObjects et la map
-      const updatedGameObjects = state.gameObjects.map((obj) =>
-        obj.id === parentId ? newParent : obj
-      );
-
-      const updatedMap = new Map(state.gameObjectMap);
-      updatedMap.set(parentId, newParent);
-
-      return {
-        gameObjects: updatedGameObjects,
-        gameObjectMap: updatedMap,
-      };
+  // Subscribe to scene events and update store
+  const setupEventListeners = () => {
+    const unsub1 = scene.on("transform:updated", () => {
+      get().syncFromScene();
     });
 
-    markDirty();
-  },
-
-  canSetParent: (id: string, newParentId: string | null) => {
-    if (!newParentId) return true;
-    if (id === newParentId) return false;
-    const state = get();
-    // Traverse up the parent chain to detect circular dependency
-    let currentId: string | null = newParentId;
-    while (currentId) {
-      if (currentId === id) return false;
-      const go = state.gameObjectMap.get(currentId);
-      currentId = go?.parentId ?? null;
-    }
-    return true;
-  },
-
-  toggleExpanded: (id: string) => {
-    set((state) => {
-      const go = state.gameObjectMap.get(id);
-      if (!go) return {};
-      const updatedGo = { ...go, isExpanded: !go.isExpanded };
-      const updatedGameObjects = state.gameObjects.map((obj) =>
-        obj.id === id ? updatedGo : obj
-      );
-      const updatedMap = new Map<string, GameObjectData>();
-      updatedGameObjects.forEach((obj) => updatedMap.set(obj.id, obj));
-      return {
-        gameObjects: updatedGameObjects,
-        gameObjectMap: updatedMap,
-      };
+    const unsub2 = scene.on("gameObject:added", () => {
+      get().syncFromScene();
     });
-    markDirty();
-  },
-  gameObjects: [],
-  gameObjectMap: new Map(),
 
-  addGameObject: (name, parentId = null) => {
-    const gameObject = new GameObject({ name });
-    const data = gameObject.serialize();
-    // US7: Add hierarchy fields
-    data.parentId = parentId;
-    data.children = [];
-    data.isExpanded = true;
+    const unsub3 = scene.on("gameObject:removed", () => {
+      get().syncFromScene();
+    });
 
-    set((state) => {
-      const newMap = new Map(state.gameObjectMap);
-      newMap.set(data.id, data);
+    unsubscribers.push(unsub1, unsub2, unsub3);
+  };
 
-      // If parentId is set, add to parent's children
-      if (parentId && newMap.has(parentId)) {
-        const parent = newMap.get(parentId)!;
-        parent.children = [...parent.children, data.id];
-        newMap.set(parentId, parent);
+  setupEventListeners();
+
+  return {
+    scene,
+    gameObjects: [],
+    gameObjectMap: new Map(),
+    unsubscribers,
+
+    // Lifecycle
+    initializeScene: () => {
+      scene.initialize();
+      get().syncFromScene();
+    },
+
+    syncFromScene: () => {
+      const gameObjects = scene.getAllGameObjects();
+      const gameObjectMap = new Map<string, GameObjectData>();
+
+      gameObjects.forEach((go) => {
+        gameObjectMap.set(go.id, go.serialize());
+      });
+
+      set({
+        gameObjects: gameObjects.map((go) => go.serialize()),
+        gameObjectMap,
+      });
+    },
+
+    dispose: () => {
+      unsubscribers.forEach((unsub) => unsub());
+      scene.dispose();
+    },
+
+    // Play mode
+    startPlayMode: () => {
+      scene.play();
+
+      const tick = () => {
+        if (scene.isInPlayMode()) {
+          scene.tick();
+          requestAnimationFrame(tick);
+        }
+      };
+      requestAnimationFrame(tick);
+    },
+
+    stopPlayMode: () => {
+      scene.stop();
+    },
+
+    addGameObject: (nameOrGameObject: string | GameObject, parentId?: string | null) => {
+      let gameObjectInstance: GameObject;
+
+      if (typeof nameOrGameObject === "string") {
+        gameObjectInstance = new GameObject({ name: nameOrGameObject, parentId });
+      } else {
+        gameObjectInstance = nameOrGameObject;
+        // If a parentId was provided as second arg, respect it
+        if (parentId !== undefined) {
+          gameObjectInstance.parentId = parentId;
+        }
       }
 
-      return {
-        gameObjects: [...state.gameObjects, data],
-        gameObjectMap: newMap,
-      };
-    });
+      scene.addGameObject(gameObjectInstance);
+      markDirty();
+      return gameObjectInstance.id;
+    },
 
-    markDirty(); // T083
-    return data.id;
-  },
-
-  removeGameObject: (id, deleteChildren = true) => {
-    set((state) => {
-      const target = state.gameObjectMap.get(id);
-      if (!target) return {};
-
-      // We'll update parent/children relationships below as part of each branch
-
+    removeGameObject: (id: string, deleteChildren = true) => {
       if (deleteChildren) {
-        // Recursively delete target and all descendants
+        // Remove recursively
+        const state = get();
         const removeIds = new Set<string>();
         const collectChildren = (goId: string) => {
           removeIds.add(goId);
-          const go = state.gameObjectMap.get(goId);
-          if (go && go.children) {
-            go.children.forEach(collectChildren);
+          const serialized = state.gameObjectMap.get(goId);
+          if (serialized && serialized.children) {
+            serialized.children.forEach(collectChildren);
           }
         };
         collectChildren(id);
 
-        const newGameObjects = state.gameObjects.filter(
-          (go) => !removeIds.has(go.id)
-        );
-        const newMap = new Map<string, GameObjectData>();
-        newGameObjects.forEach((go) => newMap.set(go.id, go));
-
-        return {
-          gameObjects: newGameObjects,
-          gameObjectMap: newMap,
-        };
+        removeIds.forEach((removeId) => scene.removeGameObject(removeId));
       } else {
-        // Promote direct children to root (set parentId = null)
-        // 1) Promote direct children to root
-        const promoted = state.gameObjects.map((go) =>
-          go.parentId === id ? { ...go, parentId: null } : go
-        );
+        // Just remove the object, promote children
+        const target = scene.getGameObject(id);
+        if (target) {
+          const children = scene.getChildren(id);
+          children.forEach((child) => {
+            child.parentId = target.parentId;
+          });
+        }
+        scene.removeGameObject(id);
+      }
+      markDirty();
+    },
 
-        // 2) Remove the target GameObject
-        let finalGameObjects = promoted.filter((go) => go.id !== id);
+    updateGameObject: (id: string, updates: Partial<GameObjectData>) => {
+      const gameObject = scene.getGameObject(id);
+      if (!gameObject) return;
 
-        // 3) If the target had a parent, remove the target id from that parent's children
-        if (target.parentId) {
-          finalGameObjects = finalGameObjects.map((go) =>
-            go.id === target.parentId
-              ? { ...go, children: go.children.filter((cid) => cid !== id) }
-              : go
-          );
+      // Apply updates to the GameObject instance
+      if (updates.name !== undefined) {
+        gameObject.name = updates.name;
+      }
+      if (updates.parentId !== undefined) {
+        gameObject.parentId = updates.parentId;
+      }
+
+      // Trigger sync
+      get().syncFromScene();
+      markDirty();
+    },
+
+    updateTransform: (gameObjectId, position, rotation, scale) => {
+      scene.updateTransform(gameObjectId, position, rotation, scale);
+      markDirty();
+    },
+
+    // Component management
+    addComponent: (gameObjectId: string, component: Component) => {
+      const gameObject = scene.getGameObject(gameObjectId);
+      if (!gameObject) return;
+
+      gameObject.addComponent(component);
+      get().syncFromScene();
+      markDirty();
+    },
+
+    updateComponent: (
+      gameObjectId: string,
+      componentId: string,
+      updates: Partial<ComponentData>
+    ) => {
+      const gameObject = scene.getGameObject(gameObjectId);
+      if (!gameObject) return;
+
+      const component = gameObject.getComponentById(componentId);
+      if (!component) return;
+
+      // Apply updates to component
+      Object.assign(component, updates);
+
+      get().syncFromScene();
+      markDirty();
+    },
+
+    removeComponent: (gameObjectId: string, componentId: string) => {
+      const gameObject = scene.getGameObject(gameObjectId);
+      if (!gameObject) return;
+
+      const component = gameObject.getComponentById(componentId);
+      if (component?.type === "Transform") {
+        console.warn("Cannot remove Transform component");
+        return;
+      }
+
+      gameObject.removeComponent(componentId);
+      get().syncFromScene();
+      markDirty();
+    },
+
+    // Hierarchy operations
+    setParent: (id: string, newParentId: string | null) => {
+      if (id === newParentId) return false;
+      if (!get().canSetParent(id, newParentId)) return false;
+
+      const gameObject = scene.getGameObject(id);
+
+      if (!gameObject) return false;
+
+      if (newParentId != null) {
+        const parentGameObject = scene.getGameObject(newParentId);
+        if (!parentGameObject) return false;
+        parentGameObject.addChild(gameObject);
+      }
+
+      gameObject.parentId = newParentId;
+      get().syncFromScene();
+      markDirty();
+      return true;
+    },
+
+    canSetParent: (id: string, newParentId: string | null) => {
+      if (!newParentId) return true;
+      if (id === newParentId) return false;
+
+      // Check for circular dependency
+      let currentId: string | null = newParentId;
+      while (currentId) {
+        if (currentId === id) return false;
+        const go = scene.getGameObject(currentId);
+        currentId = go?.parentId ?? null;
+      }
+      return true;
+    },
+
+    toggleExpanded: (id: string) => {
+      const state = get();
+      const serialized = state.gameObjectMap.get(id);
+      if (!serialized) return;
+
+      // Update the serialized data (this is UI state, not core scene state)
+      const updatedGo = { ...serialized, isExpanded: !serialized.isExpanded };
+      const updatedMap = new Map(state.gameObjectMap);
+      updatedMap.set(id, updatedGo);
+
+      const updatedGameObjects = state.gameObjects.map((go) =>
+        go.id === id ? updatedGo : go
+      );
+
+      set({
+        gameObjects: updatedGameObjects,
+        gameObjectMap: updatedMap,
+      });
+      markDirty();
+    },
+
+    reorderSibling: (
+      draggedId: string,
+      targetId: string,
+      position: "above" | "below"
+    ) => {
+      // This is a UI ordering operation - we need to maintain order in serialized data
+      // but not necessarily in the core scene
+      set((state) => {
+        const draggedObj = state.gameObjectMap.get(draggedId);
+        const targetObj = state.gameObjectMap.get(targetId);
+
+        if (!draggedObj || !targetObj) return {};
+        if (draggedObj.parentId !== targetObj.parentId) {
+          console.warn("Cannot reorder: objects have different parents");
+          return {};
         }
 
-        const newMap = new Map<string, GameObjectData>();
-        finalGameObjects.forEach((go) => newMap.set(go.id, go));
+        const parentId = draggedObj.parentId;
+
+        if (parentId === null) {
+          // Reorder root objects
+          let rootObjects = state.gameObjects.filter(
+            (obj) => obj.parentId === null && obj.id !== draggedId
+          );
+
+          const targetIdx = rootObjects.findIndex((obj) => obj.id === targetId);
+          if (targetIdx === -1) return {};
+
+          const insertIdx = position === "above" ? targetIdx : targetIdx + 1;
+          rootObjects.splice(insertIdx, 0, draggedObj);
+
+          const nonRootObjects = state.gameObjects.filter(
+            (obj) => obj.parentId !== null
+          );
+
+          return {
+            gameObjects: [...rootObjects, ...nonRootObjects],
+          };
+        }
+
+        // Reorder within parent
+        const parent = state.gameObjectMap.get(parentId);
+        if (!parent) return {};
+
+        let newChildren = parent.children.filter((cid) => cid !== draggedId);
+        const targetIdx = newChildren.indexOf(targetId);
+        if (targetIdx === -1) return {};
+
+        const insertIdx = position === "above" ? targetIdx : targetIdx + 1;
+        newChildren.splice(insertIdx, 0, draggedId);
+
+        const newParent = { ...parent, children: newChildren };
+        const updatedGameObjects = state.gameObjects.map((obj) =>
+          obj.id === parentId ? newParent : obj
+        );
+        const updatedMap = new Map(state.gameObjectMap);
+        updatedMap.set(parentId, newParent);
 
         return {
-          gameObjects: finalGameObjects,
-          gameObjectMap: newMap,
+          gameObjects: updatedGameObjects,
+          gameObjectMap: updatedMap,
         };
-      }
-    });
+      });
 
-    markDirty();
-  },
+      markDirty();
+    },
 
-  updateGameObject: (id, updates) => {
-    set((state) => {
-      const newGameObjects = state.gameObjects.map((go) =>
-        go.id === id ? { ...go, ...updates } : go
-      );
-      const newMap = new Map<string, GameObjectData>();
-      newGameObjects.forEach((go) => newMap.set(go.id, go));
+    // Preset creation
+    createGameObjectFromPreset: (
+      presetType: string,
+      parentId?: string | null
+    ) => {
+      const config = PRESET_CONFIGS[presetType];
+      if (!config) return null;
 
-      // If parentId changed, update parent/children relationships
-      if ("parentId" in updates) {
-        const oldGo = state.gameObjectMap.get(id);
-        const oldParentId = oldGo?.parentId;
-        const newParentId = updates.parentId;
-        if (oldParentId && newMap.has(oldParentId)) {
-          const oldParent = newMap.get(oldParentId)!;
-          oldParent.children = oldParent.children.filter((cid) => cid !== id);
-          newMap.set(oldParentId, oldParent);
-        }
-        if (newParentId && newMap.has(newParentId)) {
-          const newParent = newMap.get(newParentId)!;
-          newParent.children = [...newParent.children, id];
-          newMap.set(newParentId, newParent);
-        }
+      if (presetType === "camera" || presetType === "light") {
+        console.warn(`${config.name} components coming soon`);
+        return null;
       }
 
-      return {
-        gameObjects: newGameObjects,
-        gameObjectMap: newMap,
-      };
-    });
+      let name = config.name;
+      if (presetType === "empty") {
+        const state = get();
+        const count = state.gameObjects.filter((go) =>
+          go.name.startsWith("Empty")
+        ).length;
+        name = count === 0 ? "Empty" : `Empty (${count + 1})`;
+      }
 
-    markDirty(); // T083
-  },
+      const gameObject = new GameObject({ name, parentId: parentId });
+      return get().addGameObject(gameObject);
+    },
 
-  updateTransform: (gameObjectId, position, rotation, scale) => {
-    const state = get();
-    const gameObject = state.gameObjectMap.get(gameObjectId);
-    if (!gameObject) return;
+    setScene: (gameObjectsData: GameObjectData[]) => {
+      scene.getAllGameObjects().forEach((go) => {
+        scene.removeGameObject(go.id);
+      });
 
-    const transformComponent = gameObject.components.find(
-      (c) => c.type === "Transform"
-    ) as any;
-    if (!transformComponent) return;
+      gameObjectsData.forEach((goData) => {
+        const gameObject = GameObject.deserialize(goData);
+        gameObject.setScene(scene);
+        scene.addGameObject(gameObject);
+      });
 
-    const updatedTransform = {
-      ...transformComponent,
-      ...(position && { position }),
-      ...(rotation && { rotation }),
-      ...(scale && { scale }),
-    };
+      get().syncFromScene();
+    },
 
-    const updatedComponents = gameObject.components.map((c) =>
-      c.type === "Transform" ? updatedTransform : c
-    );
+    clear: () => {
+      GameObject.resetNameCounters();
 
-    get().updateGameObject(gameObjectId, { components: updatedComponents });
-  },
+      // Clear the core scene
+      scene.getAllGameObjects().forEach((go) => {
+        scene.removeGameObject(go.id);
+      });
 
-  addComponent: (gameObjectId, component) => {
-    const state = get();
-    const gameObject = state.gameObjectMap.get(gameObjectId);
-    if (!gameObject) return;
-
-    // Check for duplicate component type
-    const hasDuplicate = gameObject.components.some(
-      (c) => c.type === component.type
-    );
-    if (hasDuplicate) {
-      console.warn(
-        `GameObject already has a ${component.type} component. Adding duplicate.`
-      );
-    }
-
-    const componentData = component.serialize();
-    const updatedComponents = [...gameObject.components, componentData];
-
-    get().updateGameObject(gameObjectId, { components: updatedComponents });
-  },
-
-  updateComponent: (gameObjectId, componentId, updates) => {
-    const state = get();
-    const gameObject = state.gameObjectMap.get(gameObjectId);
-    if (!gameObject) return;
-
-    const updatedComponents = gameObject.components.map((c) =>
-      c.id === componentId ? { ...c, ...updates } : c
-    );
-
-    get().updateGameObject(gameObjectId, { components: updatedComponents });
-  },
-
-  removeComponent: (gameObjectId, componentId) => {
-    const state = get();
-    const gameObject = state.gameObjectMap.get(gameObjectId);
-    if (!gameObject) return;
-
-    const component = gameObject.components.find((c) => c.id === componentId);
-    if (component?.type === "Transform") {
-      console.warn("Cannot remove Transform component");
-      return;
-    }
-
-    const updatedComponents = gameObject.components.filter(
-      (c) => c.id !== componentId
-    );
-    get().updateGameObject(gameObjectId, { components: updatedComponents });
-  },
-
-  setScene: (gameObjects) => {
-    const newMap = new Map<string, GameObjectData>();
-    gameObjects.forEach((go) => newMap.set(go.id, go));
-
-    set({
-      gameObjects,
-      gameObjectMap: newMap,
-    });
-  },
-
-  clear: () => {
-    GameObject.resetNameCounters();
-    set({
-      gameObjects: [],
-      gameObjectMap: new Map(),
-    });
-
-    markDirty(); // T083
-  },
-}));
+      get().syncFromScene();
+      markDirty();
+    },
+  };
+});

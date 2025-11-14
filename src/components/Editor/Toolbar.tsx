@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useSceneStore, PRESET_CONFIGS } from "@/state/sceneStore";
+import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import { useHistoryStore } from "@/state/historyStore";
 import { StorageService } from "@/services/StorageService";
@@ -48,6 +48,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { usePluginManager } from "@/features/plugin/PlugginProvider";
 import { useToolbarActions } from "@/features/plugin/pluggin-hook";
 import type { ToolbarAction } from "@/core/plugin/plugin.type";
+import { PRESET_CONFIGS } from "@/state/presetConfig";
 
 export function Toolbar() {
   const [isTransitioning, setIsTransitioning] = useState(false);

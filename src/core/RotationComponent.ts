@@ -1,22 +1,22 @@
 import { Component, ComponentRegistry } from "./Component";
 import type { ComponentData } from "@/types";
+import type { GameObject } from "./GameObject";
+import { Transform } from "./Transform";
 
 export interface RotationComponentData extends ComponentData {
   type: "RotationComponent";
-  speed: number; // Rotation speed in radians per second
+  speed: number;
+  axis: "x" | "y" | "z";
 }
 
-/**
- * Example component demonstrating the update lifecycle in play mode.
- * Rotates the GameObject over time when in play mode.
- * This component needs to work with the store to update the Transform.
- */
 export class RotationComponent extends Component {
   speed: number;
+  axis: "x" | "y" | "z";
 
   constructor(data?: Partial<RotationComponentData>) {
     super("RotationComponent", data);
-    this.speed = data?.speed || 1.0; // Default: 1 radian per second
+    this.speed = data?.speed || 1.0;
+    this.axis = data?.axis || "y";
   }
 
   serialize(): RotationComponentData {
@@ -24,6 +24,7 @@ export class RotationComponent extends Component {
       ...super.serialize(),
       type: "RotationComponent",
       speed: this.speed,
+      axis: this.axis,
     };
   }
 
@@ -31,23 +32,35 @@ export class RotationComponent extends Component {
     this.speed = speed;
   }
 
-  // This update method would need access to the GameObject to modify Transform
-  // For now, this demonstrates the lifecycle hook being called
-  update(deltaTime: number): void {
-    // In a complete implementation, this would:
-    // 1. Get the Transform component from the parent GameObject
-    // 2. Increment rotation.y by speed * deltaTime
-    // 3. Update the store to trigger re-render
+  setAxis(axis: "x" | "y" | "z"): void {
+    this.axis = axis;
+  }
 
-    // For MVP demo purposes, we'll handle rotation in the UpdateLoop
-    // where we have access to the store and can update transforms
-    if (this.enabled && deltaTime > 0) {
-      // Update logic handled externally in UpdateLoop
-    }
+  setContext(gameObject: GameObject): void {
+    this.gameObject = gameObject;
+  }
+
+  update(deltaTime: number): void {
+    if (!this.enabled || !this.gameObject || !this.gameObject?.scene) return;
+    if (deltaTime <= 0) return;
+
+    const transform = this.gameObject.getComponentByType(Transform);
+    if (!transform) return;
+
+    const rotationDelta = this.speed * deltaTime;
+
+    const newRotation = { ...transform.rotation };
+    newRotation[this.axis] = (newRotation[this.axis] || 0) + rotationDelta;
+
+    this.gameObject.scene.updateTransform(
+      this.gameObject.id,
+      undefined,
+      newRotation,
+      undefined
+    );
   }
 }
 
-// Register RotationComponent
 ComponentRegistry.register(
   "RotationComponent",
   RotationComponent as new (data?: Partial<ComponentData>) => Component

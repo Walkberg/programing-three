@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { ComponentData } from "@/types";
+import type { GameObject } from "./GameObject";
 
 // Component registry to map type strings to constructors
 const componentRegistry = new Map<
@@ -12,7 +13,10 @@ export abstract class Component {
   type: string;
   enabled: boolean;
 
+  gameObject?: GameObject;
+
   constructor(type: string, data?: Partial<ComponentData>) {
+    //this.gameObject = gameObject;
     this.id = data?.id || uuidv4();
     this.type = type;
     this.enabled = data?.enabled ?? true;
@@ -36,7 +40,6 @@ export abstract class Component {
     return new ComponentClass(data);
   }
 
-  // Lifecycle methods to be implemented by subclasses
   initialize(): void {
     // Override in subclasses
   }

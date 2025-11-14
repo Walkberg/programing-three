@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { DndContext, useDroppable } from "@dnd-kit/core";
 import type { DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { useSceneStore } from "@/state/sceneStore";
@@ -20,7 +20,7 @@ function getGameObjectHierarchy(gameObjects: GameObjectData[]): any[] {
 
   map.forEach((go) => {
     go.children = go.children
-      .map((cid: string) => map.get(cid))
+      .map((childrenId: string) => map.get(childrenId))
       .filter(Boolean);
   });
 

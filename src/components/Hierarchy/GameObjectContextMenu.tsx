@@ -7,12 +7,13 @@ import {
   ContextMenuSubTrigger,
   ContextMenuSubContent,
 } from "@/components/ui/context-menu";
-import { PRESET_CONFIGS, useSceneStore } from "@/state/sceneStore";
+import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
 import type { GameObjectData } from "@/types";
 import React, { memo, useState } from "react";
 import { ComponentRegistry } from "@/core/Component";
 import { DeleteGameObjectDialog } from "./DeleteGameObjectDialog";
+import { PRESET_CONFIGS } from "@/state/presetConfig";
 
 function getPresetConfigs() {
   return Object.entries(PRESET_CONFIGS).map(([key, preset]) => ({
