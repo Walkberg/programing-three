@@ -10,11 +10,13 @@ import { DockingPanelPlugin } from "./plugins/docking/docking.plugin";
 import { PluginEditor } from "./plugins/plugin-editor/pluggin-editor.plugin";
 import { DockingProvider } from "./components/Docking/DockingProvider";
 import { editor } from "./editor/editor";
+import { CommandVisualizerPlugin } from "./plugins/command-visualizer/command-visualizer.plugin";
 
 editor.registerPlugin(CodePanelPlugin);
 editor.registerPlugin(LayersPanelPlugin);
 editor.registerPlugin(DockingPanelPlugin);
 editor.registerPlugin(PluginEditor);
+editor.registerPlugin(CommandVisualizerPlugin);
 
 const EditorLayout = lazy(() =>
   import("@/components/Editor/EditorLayout").then((module) => ({

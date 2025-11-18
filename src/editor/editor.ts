@@ -1,3 +1,11 @@
+import {
+  CommandManager,
+  type CommandDefinition,
+  type CommandFactory,
+  type SimpleCommandHandler,
+} from "./command-manager";
+import { SaveCommand } from "./commands/save-command";
+import { EventManager } from "./event-manager";
 import { KeybindingManager, type Shortcut } from "./keybinging-manager";
 import { PanelManager } from "./panel-manager";
 import { PluginManager } from "./plugin/plugin-manager";
@@ -8,33 +16,7 @@ import type {
 } from "./plugin/plugin.type";
 import { ToolbarManager } from "./toolbar-manager";
 
-class EventManager {
-  private listeners: Set<EventListener> = new Set();
-
-  public addListener(listener: EventListener): void {
-    this.listeners.add(listener);
-  }
-
-  public removeListener(listener: EventListener): void {
-    this.listeners.delete(listener);
-  }
-
-  public notifyListeners(): void {
-    this.listeners.forEach((listener) => {
-      try {
-        listener();
-      } catch (error) {
-        console.error("Erreur dans un listener:", error);
-      }
-    });
-  }
-
-  public emitEvent(event: string): void {
-    this.notifyListeners();
-  }
-}
-
-export class Editor implements PluginAPI {
+export class Editor {
   public plugins: PluginManager = new PluginManager(this);
   public commands: CommandManager = new CommandManager();
   public listeners: EventManager = new EventManager();
@@ -50,6 +32,14 @@ export class Editor implements PluginAPI {
   registerSimpleCommand(name: string, handler: SimpleCommandHandler): void {
     this.commands.registerSimpleCommand(name, handler);
     this.listeners.notifyListeners();
+  }
+
+  reg(name: string, command: CommandDefinition): void {
+    if (command.type === "command-pattern") {
+      this.commands.registerCommandPattern(name, command.factory);
+    } else {
+      this.commands.registerSimpleCommand(name, command.handler);
+    }
   }
 
   executeCommand(name: string, ...args: any[]): void | Promise<void> {
@@ -126,144 +116,6 @@ export class Editor implements PluginAPI {
   }
 }
 
-interface ICommand {
-  execute(): void;
-  undo(): void;
-  redo?(): void;
-  label: string;
-}
-
-type CommandFactory = (...args: any[]) => ICommand;
-
-type SimpleCommandHandler = (...args: any[]) => void | Promise<void>;
-
-type CommandDefinition =
-  | {
-      type: "command-pattern";
-      factory: CommandFactory;
-    }
-  | {
-      type: "simple";
-      handler: SimpleCommandHandler;
-    };
-
-export class SaveCommand implements ICommand {
-  private id: string | null = null;
-  private title: string;
-  private savedState: any;
-
-  constructor(title: string) {
-    this.title = title;
-  }
-
-  execute() {
-    // Sauvegarder l'état actuel
-    this.savedState = { title: this.title, timestamp: Date.now() };
-    this.id = `save-${Date.now()}`;
-    console.log(`✅ Projet "${this.title}" sauvegardé (ID: ${this.id})`);
-  }
-
-  undo() {
-    if (this.id) {
-      console.log(
-        `⏪ Annulation de la sauvegarde du projet "${this.title}" (ID: ${this.id})`
-      );
-      this.id = null;
-    }
-  }
-
-  redo() {
-    console.log(`⏩ Refaire la sauvegarde du projet "${this.title}"`);
-    this.execute();
-  }
-
-  label = "Sauvegarder le projet";
-}
-
-class CommandManager {
-  private undoStack: ICommand[] = [];
-  private redoStack: ICommand[] = [];
-  private commandDefinitions: Map<string, CommandDefinition> = new Map();
-
-  registerCommandPattern(name: string, factory: CommandFactory): void {
-    this.commandDefinitions.set(name, {
-      type: "command-pattern",
-      factory,
-    });
-  }
-
-  registerSimpleCommand(name: string, handler: SimpleCommandHandler): void {
-    this.commandDefinitions.set(name, {
-      type: "simple",
-      handler,
-    });
-  }
-
-  executeCommand(name: string, ...args: any[]): void | Promise<void> {
-    const definition = this.commandDefinitions.get(name);
-
-    if (!definition) {
-      console.warn(`Commande "${name}" non trouvée`);
-      return;
-    }
-
-    if (definition.type === "command-pattern") {
-      const command = definition.factory(...args);
-      command.execute();
-      this.undoStack.push(command);
-      this.redoStack = [];
-    } else {
-      return definition.handler(...args);
-    }
-  }
-
-  undo(): void {
-    const cmd = this.undoStack.pop();
-    if (!cmd) {
-      console.log("Rien à annuler");
-      return;
-    }
-
-    cmd.undo();
-    this.redoStack.push(cmd);
-  }
-
-  redo(): void {
-    const cmd = this.redoStack.pop();
-    if (!cmd) {
-      console.log("Rien à refaire");
-      return;
-    }
-
-    cmd.redo ? cmd.redo() : cmd.execute();
-    this.undoStack.push(cmd);
-  }
-
-  hasCommand(name: string): boolean {
-    return this.commandDefinitions.has(name);
-  }
-
-  getCommands(): string[] {
-    return Array.from(this.commandDefinitions.keys());
-  }
-
-  canUndo(): boolean {
-    return this.undoStack.length > 0;
-  }
-
-  canRedo(): boolean {
-    return this.redoStack.length > 0;
-  }
-}
-
-export interface PluginAPI {
-  registerCommand(name: string, factory: (...args: any[]) => ICommand): void;
-  executeCommand(name: string, ...args: any[]): void;
-}
-
-/**
- * Type pour les listeners de changements
- */
-export type EventListener = () => void;
-
 export const editor = new Editor();
+
+editor.commands.registerCommandPattern("save", () => new SaveCommand("title"));

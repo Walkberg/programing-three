@@ -51,6 +51,10 @@ const CodePanelComponent: React.FC = () => {
     editor.executeCommand("docking.add-panel", "code");
   };
 
+  const handleSave = () => {
+    editor.executeCommand("save");
+  };
+
   return (
     <div>
       <div
@@ -75,6 +79,7 @@ const CodePanelComponent: React.FC = () => {
         </div>
       </div>
       <Button onClick={handleAddPannel}>Creer un nouveau Pannel</Button>
+      <Button onClick={handleSave}>Sauvegarder</Button>
     </div>
   );
 };
