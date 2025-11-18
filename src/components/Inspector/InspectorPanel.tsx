@@ -30,7 +30,6 @@ export const InspectorPanel = memo(function InspectorPanel() {
 
   const selectedGameObject = gameObjects.find((go) => go.id === selectedId);
 
-  // Get available component types from registry
   const availableTypes = ComponentRegistry.getAvailableTypes().filter(
     (type) => type !== "Transform" // Transform is always present
   );
@@ -38,12 +37,10 @@ export const InspectorPanel = memo(function InspectorPanel() {
   const handleAddComponent = (componentType: string) => {
     if (!selectedGameObject) return;
 
-    // Check for duplicate component
     const hasDuplicate = selectedGameObject.components.some(
       (c) => c.type === componentType
     );
 
-    // Create component instance based on type
     let component;
     switch (componentType) {
       case "MeshRenderer":
@@ -52,10 +49,10 @@ export const InspectorPanel = memo(function InspectorPanel() {
       case "RotationComponent":
         component = new RotationComponent();
         break;
-      case "Model3D": // T023
+      case "Model3D":
         component = new Model3DComponent();
         break;
-      case "Code": // T032
+      case "Code":
         component = new CodeComponent();
         break;
       default:
@@ -67,10 +64,8 @@ export const InspectorPanel = memo(function InspectorPanel() {
         return;
     }
 
-    // Add component
     addComponent(selectedGameObject.id, component);
 
-    // Show duplicate warning if applicable (FR-033)
     if (hasDuplicate) {
       toast({
         title: "Duplicate Component",
@@ -101,7 +96,6 @@ export const InspectorPanel = memo(function InspectorPanel() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* GameObject Name */}
       <div>
         <h3 className="font-semibold text-lg mb-2">
           {selectedGameObject.name}
@@ -110,8 +104,6 @@ export const InspectorPanel = memo(function InspectorPanel() {
           ID: {selectedGameObject.id}
         </p>
       </div>
-
-      {/* Transform Component */}
       {transformComponent && (
         <TransformEditor
           gameObjectId={selectedGameObject.id}
@@ -119,15 +111,11 @@ export const InspectorPanel = memo(function InspectorPanel() {
           disabled={isPlayMode}
         />
       )}
-
-      {/* Other Components */}
       <ComponentEditor
         gameObjectId={selectedGameObject.id}
         components={selectedGameObject.components}
         disabled={isPlayMode}
       />
-
-      {/* Add Component Popover (at the end) */}
       <Popover>
         <PopoverTrigger asChild>
           <Button disabled={isPlayMode} variant="outline" className="w-full">
@@ -137,7 +125,6 @@ export const InspectorPanel = memo(function InspectorPanel() {
         </PopoverTrigger>
         <PopoverContent className="w-64" align="start">
           <div className="space-y-2">
-            <h4 className="font-medium text-sm mb-3">Add Component</h4>
             <div className="flex flex-col gap-1">
               {availableTypes.map((type) => (
                 <Button

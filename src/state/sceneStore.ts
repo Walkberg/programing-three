@@ -18,7 +18,10 @@ interface SceneStore {
   unsubscribers: Array<() => void>;
 
   // GameObject management
-  addGameObject: (nameOrGameObject: string | GameObject, parentId?: string | null) => string;
+  addGameObject: (
+    nameOrGameObject: string | GameObject,
+    parentId?: string | null
+  ) => string;
   removeGameObject: (id: string, deleteChildren?: boolean) => void;
   updateGameObject: (id: string, updates: Partial<GameObjectData>) => void;
   updateTransform: (
@@ -141,11 +144,17 @@ export const useSceneStore = create<SceneStore>((set, get) => {
       scene.stop();
     },
 
-    addGameObject: (nameOrGameObject: string | GameObject, parentId?: string | null) => {
+    addGameObject: (
+      nameOrGameObject: string | GameObject,
+      parentId?: string | null
+    ) => {
       let gameObjectInstance: GameObject;
 
       if (typeof nameOrGameObject === "string") {
-        gameObjectInstance = new GameObject({ name: nameOrGameObject, parentId });
+        gameObjectInstance = new GameObject({
+          name: nameOrGameObject,
+          parentId,
+        });
       } else {
         gameObjectInstance = nameOrGameObject;
         // If a parentId was provided as second arg, respect it
@@ -179,8 +188,10 @@ export const useSceneStore = create<SceneStore>((set, get) => {
         const target = scene.getGameObject(id);
         if (target) {
           const children = scene.getChildren(id);
+          // When removing an object without deleting its children, promote
+          // direct children to the scene root (parentId = null).
           children.forEach((child) => {
-            child.parentId = target.parentId;
+            child.parentId = null;
           });
         }
         scene.removeGameObject(id);

@@ -6,7 +6,7 @@ import { PluginProvider } from "./features/plugin/PlugginProvider";
 import {
   registerPlugin,
   singletonPluginManager,
-} from "./core/plugin/plugin-manager";
+} from "./editor/plugin/plugin-manager";
 import { CodePanelPlugin } from "./plugins/CodePluggin";
 import { LayersPanelPlugin } from "./plugins/LayerManagerPlugin";
 import { DockingPanelPlugin } from "./plugins/docking/docking.plugin";

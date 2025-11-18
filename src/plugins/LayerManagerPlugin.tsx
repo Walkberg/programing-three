@@ -1,4 +1,4 @@
-import { BasePlugin } from "@/core/plugin/base-plugin";
+import { BasePlugin } from "@/editor/plugin/base-plugin";
 
 export class LayersPanelPlugin extends BasePlugin {
   public id = "layers-panel-plugin";

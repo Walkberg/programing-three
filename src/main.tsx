@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
-import { registerPlugin } from "@/core/plugin/plugin-manager";
+import { registerPlugin } from "@/editor/plugin/plugin-manager.ts";
 import { KeybindingPlugin } from "@/plugins/keybinding";
 import { ViewportGizmoPlugin } from "@/plugins/viewport-gizmo/viewport-gizmo.plugin";
 

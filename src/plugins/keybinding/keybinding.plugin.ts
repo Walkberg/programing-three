@@ -1,5 +1,5 @@
-import { BasePlugin } from "@/core/plugin/base-plugin";
-import type { PluginManager } from "@/core/plugin/plugin-manager";
+import { BasePlugin } from "@/editor/plugin/base-plugin";
+import type { PluginManager } from "@/editor/plugin/plugin-manager";
 import { useKeybindingStore, defaultShortcuts } from "./store";
 import defaultKeybindingOptions from "./options";
 

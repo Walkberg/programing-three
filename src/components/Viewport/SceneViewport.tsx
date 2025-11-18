@@ -2,13 +2,11 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
-import { useAssetStore } from "@/state/assetStore";
 import { PerformanceMonitor } from "./PerformanceMonitor";
-import { useState, useRef, createContext, useContext, useEffect } from "react";
+import { useState, useRef, createContext, useEffect } from "react";
 import * as THREE from "three";
 import { useLayoutEffect } from "react";
-import { CodeExecutor } from "@/services/CodeExecutor";
-import type { CodeContext, MeshRendererData, TransformData } from "@/types";
+import type { MeshRendererData, TransformData } from "@/types";
 import { GizmosMenu } from "./GizmosMenu";
 import { useMemo } from "react";
 import { GizmoIntegration } from "./GizmoIntegration";
@@ -24,109 +22,11 @@ const PlayModeContext = createContext<PlayModeState>({
 
 // Component Update Loop for Play Mode
 function UpdateLoop() {
-  const gameObjects = useSceneStore((state) => state.gameObjects);
   const mode = useEditorStore((state) => state.mode);
-  const assets = useAssetStore((state) => state.assets);
   const lastTimeRef = useRef<number>(0);
-  const playModeState = useContext(PlayModeContext);
-  const initializedComponentsRef = useRef<Set<string>>(new Set()); // T044: Track initialized components
 
   const startPlayMode = useSceneStore((state) => state.startPlayMode);
   const stopPlayMode = useSceneStore((state) => state.stopPlayMode);
-
-  // Helper function to get code from component (either inline or from asset)
-  const getCodeFromComponent = async (
-    component: any
-  ): Promise<{
-    code: string;
-    language: "typescript" | "javascript";
-  } | null> => {
-    // If component has an assetId, load code from asset
-    if (component.assetId) {
-      const asset = assets.find((a) => a.id === component.assetId);
-      if (asset && asset.data instanceof Blob) {
-        const code = await asset.data.text();
-        const language = asset.format === ".ts" ? "typescript" : "javascript";
-        return { code, language };
-      }
-    }
-
-    if (component.code && component.code.trim()) {
-      return {
-        code: component.code,
-        language: component.language || "typescript",
-      };
-    }
-
-    return null;
-  };
-
-  useEffect(() => {
-    if (mode === "play") {
-      // Find all CodeComponents that haven't been initialized
-      gameObjects.forEach((gameObject) => {
-        gameObject.components.forEach(async (component: any) => {
-          if (
-            component.type === "Code" &&
-            component.enabled &&
-            !initializedComponentsRef.current.has(component.id)
-          ) {
-            // Create CodeContext for initialization
-            const transform = gameObject.components.find(
-              (c: any) => c.type === "Transform"
-            ) as any;
-
-            const context: CodeContext = {
-              gameObject: {
-                id: gameObject.id,
-                name: gameObject.name,
-                components: gameObject.components,
-              },
-              transform: {
-                position: { ...transform.position },
-                rotation: { ...transform.rotation },
-                scale: { ...transform.scale },
-              },
-              scene: {
-                getGameObjectById: (id: string) =>
-                  gameObjects.find((go) => go.id === id) || null,
-                getAllGameObjects: () => gameObjects,
-              },
-              deltaTime: 0,
-            };
-
-            // Get code from asset or inline
-            const codeData = await getCodeFromComponent(component);
-            if (codeData) {
-              // Wrap code with start() call
-              const initCode = `
-${codeData.code}
-if (typeof start === 'function') {
-  start();
-}
-              `;
-
-              CodeExecutor.transpileAndExecute(
-                initCode,
-                codeData.language,
-                context
-              ).catch((error) => {
-                console.error(
-                  `[CodeComponent] Failed to initialize ${gameObject.name}:`,
-                  error
-                );
-              });
-            }
-
-            initializedComponentsRef.current.add(component.id);
-          }
-        });
-      });
-    } else {
-      initializedComponentsRef.current.clear();
-      CodeExecutor.cancelAll();
-    }
-  }, [mode, gameObjects, assets]);
 
   useEffect(() => {
     if (mode === "play") {
@@ -140,124 +40,6 @@ if (typeof start === 'function') {
     if (mode !== "play") {
       lastTimeRef.current = state.clock.getElapsedTime();
       return;
-    }
-
-    // Calculate delta time
-    const currentTime = state.clock.getElapsedTime();
-    const deltaTime = currentTime - lastTimeRef.current;
-    lastTimeRef.current = currentTime;
-
-    // T045: Call update() on all enabled components
-    gameObjects.forEach((gameObject) => {
-      gameObject.components.forEach(async (component: any) => {
-        if (component.enabled && typeof component.update === "function") {
-          component.update(deltaTime);
-        }
-
-        // T045: Handle CodeComponent update() lifecycle
-        if (component.enabled && component.type === "Code") {
-          const transform = gameObject.components.find(
-            (c: any) => c.type === "Transform"
-          ) as any;
-
-          const context: CodeContext = {
-            gameObject: {
-              id: gameObject.id,
-              name: gameObject.name,
-              components: gameObject.components,
-            },
-            transform: {
-              position: { ...transform.position },
-              rotation: { ...transform.rotation },
-              scale: { ...transform.scale },
-            },
-            scene: {
-              getGameObjectById: (id: string) =>
-                gameObjects.find((go) => go.id === id) || null,
-              getAllGameObjects: () => gameObjects,
-            },
-            deltaTime,
-          };
-
-          // Get code from asset or inline
-          const codeData = await getCodeFromComponent(component);
-          if (codeData) {
-            // Wrap code with update() call
-            const updateCode = `
-${codeData.code}
-if (typeof update === 'function') {
-  update(deltaTime);
-}
-            `;
-
-            CodeExecutor.transpileAndExecute(
-              updateCode,
-              codeData.language,
-              context
-            ).catch((error) => {
-              console.error(
-                `[CodeComponent] Failed to update ${gameObject.name}:`,
-                error
-              );
-            });
-          }
-        }
-
-        // Example: Handle RotationComponent updates
-        // Accumulate rotation in playModeState instead of modifying store
-        // if (
-        //   component.enabled &&
-        //   component.type === "RotationComponent" &&
-        //   deltaTime > 0
-        // ) {
-        //   const currentOffset =
-        //     playModeState.rotationOffsets.get(gameObject.id) || 0;
-        //   playModeState.rotationOffsets.set(
-        //     gameObject.id,
-        //     currentOffset + component.speed * deltaTime
-        //   );
-        // }
-      });
-    });
-
-    // Persist accumulated rotation offsets into the scene store as incremental
-    // transform updates so the scene/state reflects play-mode changes. We apply
-    // the offset once per frame and then clear it to avoid double-counting.
-    try {
-      const sceneStore = useSceneStore.getState();
-      gameObjects.forEach((gameObject) => {
-        const offset = playModeState.rotationOffsets.get(gameObject.id) || 0;
-        if (!offset || offset === 0) return;
-
-        const transform = gameObject.components.find(
-          (c: any) => c.type === "Transform"
-        ) as any;
-        if (!transform) return;
-
-        // Apply incremental rotation on Y axis (preserve other rotation fields)
-        const newRotation = {
-          x: transform.rotation.x,
-          y: (transform.rotation.y || 0) + offset,
-          z: transform.rotation.z,
-        };
-
-        // Persist the transform change
-        try {
-          sceneStore.updateTransform(
-            gameObject.id,
-            undefined,
-            newRotation,
-            undefined
-          );
-        } catch (err) {
-          // ignore errors applying transforms
-        }
-
-        // Clear the applied offset
-        playModeState.rotationOffsets.set(gameObject.id, 0);
-      });
-    } catch (err) {
-      // defensive: do not break the frame on store errors
     }
   });
 
@@ -398,8 +180,6 @@ export function SceneViewport() {
   );
   const hoverHandle = useEditorStore((s) => s.hoverHandle);
   const gizmoMode = useEditorStore((s) => s.gizmoMode);
-  const isDragging = useEditorStore((s) => s.isDragging);
-  const selectedId = useEditorStore((s) => s.selectedId);
 
   useLayoutEffect(() => {
     const onPointerMove = (e: PointerEvent) => {
@@ -458,20 +238,13 @@ export function SceneViewport() {
 
           {/* Gizmo manager integration */}
           <GizmoIntegration />
-
           {/* Render GameObjects */}
           <GameObjectRenderer />
-
-          {/* Component update loop for play mode */}
           <UpdateLoop />
-
-          {/* Snap indicator (3D helper) */}
           <SnapIndicator />
 
           {/* Performance monitoring */}
           <PerformanceMonitor onFpsUpdate={setFps} />
-          {/* Gizmo overlay menu (UI inside Canvas but rendered as HTML overlay via portal) */}
-          {/* The actual GizmosMenu is an HTML overlay outside Canvas; render it below Canvas */}
         </Canvas>
       </PlayModeContext.Provider>
 
@@ -506,27 +279,33 @@ export function SceneViewport() {
       </div>
 
       {/* FPS display */}
-      <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-3 py-2 rounded font-mono">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">FPS:</span>
-          <span
-            className={`font-bold ${
-              fps >= 55
-                ? "text-green-500"
-                : fps >= 30
-                ? "text-yellow-500"
-                : "text-red-500"
-            }`}
-          >
-            {fps}
-          </span>
-        </div>
-        {fps < 55 && (
-          <div className="text-xs text-yellow-400 mt-1">
-            {fps < 30 ? "⚠ Poor performance" : "⚡ Acceptable"}
-          </div>
-        )}
-      </div>
+      <FpsDisplay fps={fps} />
     </div>
   );
 }
+
+export const FpsDisplay: React.FC<{ fps: number }> = ({ fps }) => {
+  return (
+    <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-3 py-2 rounded font-mono">
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground">FPS:</span>
+        <span
+          className={`font-bold ${
+            fps >= 55
+              ? "text-green-500"
+              : fps >= 30
+              ? "text-yellow-500"
+              : "text-red-500"
+          }`}
+        >
+          {fps}
+        </span>
+      </div>
+      {fps < 55 && (
+        <div className="text-xs text-yellow-400 mt-1">
+          {fps < 30 ? "⚠ Poor performance" : "⚡ Acceptable"}
+        </div>
+      )}
+    </div>
+  );
+};

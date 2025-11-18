@@ -4,7 +4,7 @@
 
 import React from "react";
 import { PanelHeader } from "./PanelHeader";
-import type { PanelType } from "@/core/plugin/plugin.type";
+import type { PanelType } from "@/editor/plugin/plugin.type";
 import { usePanelDefinition } from "./use-panel-definition";
 
 interface PanelProps {

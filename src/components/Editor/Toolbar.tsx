@@ -47,7 +47,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { usePluginManager } from "@/features/plugin/PlugginProvider";
 import { useToolbarActions } from "@/features/plugin/pluggin-hook";
-import type { ToolbarAction } from "@/core/plugin/plugin.type";
+import type { ToolbarAction } from "@/editor/plugin/plugin.type";
 import { PRESET_CONFIGS } from "@/state/presetConfig";
 
 export function Toolbar() {

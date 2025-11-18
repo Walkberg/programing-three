@@ -1,6 +1,7 @@
 import { GameObject } from "./GameObject";
 import { EventEmitter } from "./EventEmitter";
-import type { SceneData } from "@/types";
+import type { SceneData, Vector3 } from "@/types";
+import { Transform } from "./Transform";
 
 export class Scene {
   version: string;
@@ -11,10 +12,8 @@ export class Scene {
     editorVersion: string;
   };
 
-  // Event system
   private events = new EventEmitter();
 
-  // Play mode state
   private isPlaying = false;
   private lastUpdateTime = 0;
 
@@ -31,7 +30,6 @@ export class Scene {
       : [];
   }
 
-  // Event subscription API
   on(event: string, callback: (...args: any[]) => void): () => void {
     return this.events.on(event, callback);
   }
@@ -90,37 +88,36 @@ export class Scene {
     return [...this.gameObjects];
   }
 
-  // Transform update with events
   updateTransform(
     gameObjectId: string,
-    position?: { x: number; y: number; z: number },
-    rotation?: { x: number; y: number; z: number },
-    scale?: { x: number; y: number; z: number }
+    position?: Vector3,
+    rotation?: Vector3,
+    scale?: Vector3
   ): void {
     const gameObject = this.getGameObject(gameObjectId);
     if (!gameObject) return;
 
-    const transform = gameObject.getComponent("Transform") as any;
+    const transform = gameObject.getComponentByType(Transform);
+
     if (!transform) return;
 
     if (position) {
-      transform.position = { ...transform.position, ...position };
+      transform.setPosition(position.x, position.y, position.z);
     }
     if (rotation) {
-      transform.rotation = { ...transform.rotation, ...rotation };
+      transform.setRotation(rotation.x, rotation.y, rotation.z);
     }
     if (scale) {
-      transform.scale = { ...transform.scale, ...scale };
+      transform.setScale(scale.x, scale.y, scale.z);
     }
 
     this.emit("transform:updated", gameObjectId, {
-      position: transform.position,
-      rotation: transform.rotation,
-      scale: transform.scale,
+      position: transform.getPosition(),
+      rotation: transform.getRotation(),
+      scale: transform.getScale(),
     });
   }
 
-  // Hierarchy helpers
   getChildren(parentId: string): GameObject[] {
     return this.gameObjects.filter((go) => go.parentId === parentId);
   }
@@ -129,7 +126,6 @@ export class Scene {
     return this.gameObjects.filter((go) => go.parentId === null);
   }
 
-  // Play mode control
   play(): void {
     if (this.isPlaying) return;
     this.isPlaying = true;
@@ -148,30 +144,26 @@ export class Scene {
     return this.isPlaying;
   }
 
-  // Lifecycle methods
   initialize(): void {
     this.gameObjects.forEach((go) => go.initialize());
   }
 
-  // Core update loop - Components modify the scene directly
   tick(): void {
     if (!this.isPlaying) return;
 
     const currentTime = performance.now();
-    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // Convert to seconds
+    const deltaTime = (currentTime - this.lastUpdateTime) / 1000;
     this.lastUpdateTime = currentTime;
 
     this.update(deltaTime);
   }
 
   update(deltaTime: number): void {
-    // Let each GameObject and its components update
-    // Components can modify their GameObject's transform directly
     this.gameObjects.forEach((go) => {
       go.update(deltaTime);
 
       // After update, check if transform changed and emit event
-      const transform = go.getComponent("Transform") as any;
+      const transform = go.getComponentByType(Transform);
       if (transform) {
         // Components are responsible for calling scene.updateTransform()
         // when they modify the transform
@@ -183,7 +175,6 @@ export class Scene {
     this.gameObjects.forEach((go) => go.render());
   }
 
-  // Cleanup
   dispose(): void {
     this.events.clear();
     this.gameObjects = [];

@@ -1,5 +1,5 @@
-import { BasePlugin } from "@/core/plugin/base-plugin";
-import type { PluginManager } from "@/core/plugin/plugin-manager";
+import { BasePlugin } from "@/editor/plugin/base-plugin";
+import type { PluginManager } from "@/editor/plugin/plugin-manager";
 import { useEditorStore } from "@/state/editorStore";
 
 const VIEWPORT_ROTATE = "viewport.rotate";
@@ -57,6 +57,13 @@ export class ViewportGizmoPlugin extends BasePlugin {
 
     this.registerCommand(VIEWPORT_OFF, () => {
       useEditorStore.getState().setGizmoMode("none");
+    });
+
+    // Backwards-compatible command used by existing tests and callers
+    // that expect a generic `gizmo.setMode` command identifier.
+    this.registerCommand("gizmo.setMode", (mode: string) => {
+      const setGizmoMode = useEditorStore.getState().setGizmoMode;
+      if (setGizmoMode) setGizmoMode(mode as any);
     });
 
     this.manager.keybinding.registerShortcuts(shortcuts);

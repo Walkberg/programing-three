@@ -2,9 +2,9 @@ import { Component, ComponentRegistry } from "./Component";
 import type { Vector3, Euler, TransformData, ComponentData } from "@/types";
 
 export class Transform extends Component {
-  position: Vector3;
-  rotation: Euler;
-  scale: Vector3;
+  private position: Vector3;
+  private rotation: Euler;
+  private scale: Vector3;
 
   constructor(data?: Partial<TransformData>) {
     super("Transform", data);
@@ -49,6 +49,22 @@ export class Transform extends Component {
       y: Math.max(0.001, y),
       z: Math.max(0.001, z),
     };
+  }
+
+  udpateTransform(position: Vector3, rotation: Euler, scale: Vector3): void {
+    this.setPosition(position.x, position.y, position.z);
+    this.setRotation(rotation.x, rotation.y, rotation.z, rotation.order);
+    this.setScale(scale.x, scale.y, scale.z);
+  }
+
+  getPosition(): Vector3 {
+    return { ...this.position };
+  }
+  getRotation(): Euler {
+    return { ...this.rotation };
+  }
+  getScale(): Vector3 {
+    return { ...this.scale };
   }
 }
 

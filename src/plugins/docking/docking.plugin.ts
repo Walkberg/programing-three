@@ -1,4 +1,4 @@
-import { BasePlugin } from "@/core/plugin/base-plugin";
+import { BasePlugin } from "@/editor/plugin/base-plugin";
 
 import { HierarchyPanel } from "@/components/Hierarchy/HierarchyPanel";
 import { SceneViewport } from "@/components/Viewport/SceneViewport";
@@ -86,6 +86,8 @@ export class DockingPanelPlugin extends BasePlugin {
     this.registerCommand(ADD_PANEL_COMMAND_ID, () => {
       console.log("Ajout d'un panneau ");
     });
+
+    //this.editor.commands.hasCommand(ADD_PANEL_COMMAND_ID);
   }
 
   unregister(): void {

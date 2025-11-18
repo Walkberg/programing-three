@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { BasePlugin } from "@/core/plugin/base-plugin";
+import { BasePlugin } from "@/editor/plugin/base-plugin";
 import { usePluginManager } from "@/features/plugin/PlugginProvider";
 import { House } from "lucide-react";
 

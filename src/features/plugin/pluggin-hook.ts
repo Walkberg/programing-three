@@ -3,7 +3,7 @@ import type {
   PanelDefinition,
   PluginInfo,
   ToolbarAction,
-} from "@/core/plugin/plugin.type";
+} from "@/editor/plugin/plugin.type";
 import { usePluginManager } from "./PlugginProvider";
 
 export const usePlugins = (): PluginInfo[] => {

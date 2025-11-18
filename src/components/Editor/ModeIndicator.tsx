@@ -9,7 +9,7 @@ export function ModeIndicator() {
       <div className="flex items-center gap-2">
         <div
           className={cn(
-            "h-2 w-2 rounded-full",
+            "h-1 w-2 rounded-full",
             mode === "play" ? "bg-green-500 animate-pulse" : "bg-blue-500"
           )}
         />

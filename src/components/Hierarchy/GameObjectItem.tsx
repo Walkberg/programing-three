@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useRef } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useEditorStore } from "@/state/editorStore";
 import { useSceneStore } from "@/state/sceneStore";
@@ -131,7 +131,6 @@ export const GameObjectItem = memo(function GameObjectItem({
           className={cn("h-2 w-full", isOverAbove && "bg-blue-400")}
           style={{ marginTop: 2, marginBottom: 2 }}
         />
-        {/* Main draggable item */}
         <div
           ref={setNodeRef}
           {...attributes}
@@ -143,10 +142,9 @@ export const GameObjectItem = memo(function GameObjectItem({
             isOverCenter && "bg-blue-100"
           )}
           style={{ paddingLeft: `${depth * 16 + 8}px`, position: "relative" }}
-          onClick={handleClick}
           onDoubleClick={handleDoubleClick}
+          onClick={handleClick}
         >
-          {/* Center drop zone (overlay) */}
           <div
             ref={setCenterRef}
             style={{
@@ -193,13 +191,11 @@ export const GameObjectItem = memo(function GameObjectItem({
             <span className="flex-1 text-sm truncate">{gameObject.name}</span>
           )}
         </div>
-        {/* Below drop zone */}
         <div
           ref={setBelowRef}
-          className={cn("h-2 w-full", isOverBelow && "bg-blue-400")}
-          style={{ marginTop: 2, marginBottom: 2 }}
+          className={cn("h-1 w-full", isOverBelow && "bg-blue-400")}
+          style={{ marginTop: 1, marginBottom: 1 }}
         />
-        {/* Render children if expanded */}
         {hasChildren && gameObject.isExpanded && childrenItems}
       </div>
     </GameObjectContextMenu>

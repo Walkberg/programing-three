@@ -109,7 +109,6 @@ export function TransformEditor({
 
         <h4 className="font-medium text-sm flex-1">Transform</h4>
       </div>
-
       <CollapsibleContent className="px-3 pb-3">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           {/* Position */}

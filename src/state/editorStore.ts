@@ -7,14 +7,12 @@ import type {
   SnapSettings,
 } from "@/types";
 
-// (Keybinding feature moved to `src/features/keybinding`)
-
 interface EditorStore {
   mode: EditorMode;
   selectedId: string | null;
   selectedIds: string[];
   playStateSnapshot: SceneData | null;
-  isDirty: boolean; // T083: Track unsaved changes
+  isDirty: boolean;
 
   // Gizmo state
   gizmoMode: GizmoMode;
@@ -30,10 +28,6 @@ interface EditorStore {
   setPivotMode: (pivotMode: "center" | "local") => void;
   setHoverHandle: (handle: string | null) => void;
   setIsDragging: (isDragging: boolean) => void;
-
-  // Shortcuts (user-configurable)
-  // (moved to src/features/keybinding)
-
   setMode: (mode: EditorMode) => void;
   selectGameObject: (id: string | null) => void;
   setSelection: (ids: string[]) => void;
@@ -48,7 +42,6 @@ export const useEditorStore = create<EditorStore>((set) => ({
   isDirty: false,
   gizmoMode: "none",
   gizmoSpace: "world",
-  // Persist gizmo snap and pivot mode across sessions
   gizmoSnap:
     typeof window !== "undefined" && window.localStorage
       ? (() => {
@@ -61,15 +54,11 @@ export const useEditorStore = create<EditorStore>((set) => ({
           return {};
         })()
       : {},
-  // pivotMode: center = use object center, local = use object's origin/local pivot
   pivotMode: "center",
   hoverHandle: null,
   isDragging: false,
-  // (keybinding state moved to `src/features/keybinding`)
-
-  setMode: (mode) => set({ mode }),
-
   selectedIds: [],
+  setMode: (mode) => set({ mode }),
 
   selectGameObject: (id) =>
     set(() => {
@@ -119,6 +108,4 @@ export const useEditorStore = create<EditorStore>((set) => ({
 
   setHoverHandle: (handle) => set({ hoverHandle: handle }),
   setIsDragging: (isDragging) => set({ isDragging }),
-
-  // (no shortcut state here)
 }));

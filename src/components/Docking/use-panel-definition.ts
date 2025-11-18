@@ -1,4 +1,4 @@
-import type { PanelDefinition } from "@/core/plugin/plugin.type";
+import type { PanelDefinition } from "@/editor/plugin/plugin.type";
 import { usePanels } from "@/features/plugin/pluggin-hook";
 
 // temporary replace registry

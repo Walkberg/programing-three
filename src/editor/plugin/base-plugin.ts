@@ -1,3 +1,4 @@
+import { Editor } from "../editor";
 import type { PluginManager } from "./plugin-manager";
 import type {
   CommandHandler,
@@ -16,8 +17,11 @@ export abstract class BasePlugin implements IPlugin {
   public manifest?: PluginManifest;
   public manager: PluginManager;
 
+  public editor: Editor;
+
   constructor(manager: PluginManager) {
     this.manager = manager;
+    this.editor = new Editor();
   }
 
   /**

@@ -2,7 +2,7 @@
 // Feature: 003-docking-panel-system
 // Based on data-model.md and LIBRARY_BEST_PRACTICES.md
 
-import type { PanelType } from "@/core/plugin/plugin.type";
+import type { PanelType } from "@/editor/plugin/plugin.type";
 import { type LucideIcon } from "lucide-react";
 import { type ComponentType } from "react";
 

@@ -1,7 +1,7 @@
-import { BasePlugin } from "@/core/plugin/base-plugin";
+import { BasePlugin } from "@/editor/plugin/base-plugin";
 import { Edit2Icon } from "lucide-react";
 import { PluginEditorPanel } from "./PluginEditorPanel";
-import { registerPlugin } from "@/core/plugin/plugin-manager";
+import { registerPlugin } from "@/editor/plugin/plugin-manager";
 
 export class PluginEditor extends BasePlugin {
   public id = "plugin-editor-plugin";

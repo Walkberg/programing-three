@@ -1,4 +1,4 @@
-import { PluginManager } from "@/core/plugin/plugin-manager";
+import { PluginManager } from "@/editor/plugin/plugin-manager";
 import {
   createContext,
   useContext,

@@ -1,5 +1,10 @@
 import { memo } from "react";
-import { DndContext, useDroppable } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+} from "@dnd-kit/core";
 import type { DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { useSceneStore } from "@/state/sceneStore";
 import { useEditorStore } from "@/state/editorStore";
@@ -32,12 +37,18 @@ export const HierarchyPanel = memo(function HierarchyPanel() {
   const { setNodeRef: setRootDropRef, isOver: isOverRoot } = useDroppable({
     id: "hierarchy-root-drop",
   });
-  const gameObjects = useSceneStore((state) => state.gameObjects);
   const selectedId = useEditorStore((state) => state.selectedId);
+  const gameObjects = useSceneStore((state) => state.gameObjects);
   const toggleExpanded = useSceneStore((state) => state.toggleExpanded);
   const setParent = useSceneStore((state) => state.setParent);
   const canSetParent = useSceneStore((state) => state.canSetParent);
   const reorderSibling = useSceneStore((state) => state.reorderSibling);
+
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 5,
+    },
+  });
 
   const showToast = (opts: {
     title: string;
@@ -134,7 +145,11 @@ export const HierarchyPanel = memo(function HierarchyPanel() {
   const roots = getGameObjectHierarchy(gameObjects);
 
   return (
-    <DndContext onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+    <DndContext
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      sensors={[pointerSensor]}
+    >
       <GameObjectContextMenu>
         <div className="p-2 relative h-full ">
           <div

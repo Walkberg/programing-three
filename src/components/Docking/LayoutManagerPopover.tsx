@@ -14,7 +14,7 @@ import { useLayoutStore } from "@/state/layoutStore";
 import { PresetList } from "./PresetList";
 import { SaveLayoutDialog } from "./SaveLayoutDialog";
 import { usePanels } from "@/features/plugin/pluggin-hook";
-import type { PanelType } from "@/core/plugin/plugin.type";
+import type { PanelType } from "@/editor/plugin/plugin.type";
 
 export function LayoutManagerPopover() {
   const [open, setOpen] = useState(false);
