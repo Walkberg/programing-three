@@ -37,9 +37,7 @@ class EventManager {
 export class Editor implements PluginAPI {
   public plugins: PluginManager = new PluginManager(this);
   public commands: CommandManager = new CommandManager();
-
   public listeners: EventManager = new EventManager();
-
   public panels: PanelManager = new PanelManager();
   public toolbar: ToolbarManager = new ToolbarManager();
   public keybindings: KeybindingManager = new KeybindingManager();
