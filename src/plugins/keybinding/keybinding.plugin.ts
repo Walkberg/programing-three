@@ -1,7 +1,7 @@
 import { BasePlugin } from "@/editor/plugin/base-plugin";
-import type { PluginManager } from "@/editor/plugin/plugin-manager";
 import { useKeybindingStore, defaultShortcuts } from "./store";
 import defaultKeybindingOptions from "./options";
+import type { Editor } from "@/editor/editor";
 
 /**
  * KeybindingPlugin
@@ -22,8 +22,8 @@ export class KeybindingPlugin extends BasePlugin {
   private _keyToBinding: Map<string, { commandId: string; args?: any[] }> =
     new Map();
 
-  constructor(manager: PluginManager) {
-    super(manager);
+  constructor(editor: Editor) {
+    super(editor);
     // declare manifest for tooling / capability checks
     this.manifest = {
       id: this.id,
@@ -87,7 +87,7 @@ export class KeybindingPlugin extends BasePlugin {
       // Single lookup: if a mapping exists for this key, execute it.
       const mapping = this._keyToBinding.get(key);
       if (mapping) {
-        if (this.manager.hasCommand(mapping.commandId)) {
+        if (this.editor.commands.hasCommand(mapping.commandId)) {
           e.preventDefault();
           this.safeExecute(mapping.commandId, ...(mapping.args || []));
         }
@@ -95,28 +95,19 @@ export class KeybindingPlugin extends BasePlugin {
     } catch (err) {
       // Keep keyboard handling resilient; swallow errors
       // but surface them when logging is enabled on the PluginManager
-      (this.manager as any).log?.("error", "Keybinding handler error:", err);
+      //(this.editor as any).log?.("error", "Keybinding handler error:", err);
     }
   }
 
   private safeExecute(commandId: string, ...args: any[]) {
     try {
-      if (!this.manager.hasCommand(commandId)) {
-        (this.manager as any).log?.(
-          "warn",
-          `KeybindingPlugin attempted to execute missing command ${commandId}`
-        );
+      if (!this.editor.commands.hasCommand(commandId)) {
         return;
       }
-      const res = this.executeCommand(commandId, ...args);
+      const res = this.editor.commands.executeCommand(commandId, ...args);
       if (res instanceof Promise) {
-        res.catch((err) =>
-          (this.manager as any).log?.("error", "Command error:", err)
-        );
       }
-    } catch (err) {
-      (this.manager as any).log?.("error", "safeExecute error:", err);
-    }
+    } catch (err) {}
   }
 
   /**

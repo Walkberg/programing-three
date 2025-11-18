@@ -1,13 +1,12 @@
-import type { PluginManager } from "./plugin-manager";
+import type { Editor } from "../editor";
 import type { LucideIcon } from "lucide-react";
 
 export interface IPlugin {
   id: string;
   name: string;
   description?: string;
-  manager: PluginManager;
   version?: string;
-  register(): void;
+  register(editor: Editor): void;
   unregister?(): void;
 }
 
@@ -33,6 +32,7 @@ export type ActionType = "button" | "toggle" | "dropdown" | "custom";
  * Configuration d'une action toolbar
  */
 export interface ToolbarAction {
+  id: string;
   type: ActionType;
   label: string;
   icon?: string;
@@ -63,7 +63,7 @@ export type PanelType =
 export interface PanelDefinition {
   id: PanelType;
   title: string;
-  pluginId: string;
+  //pluginId: string;
   icon: LucideIcon;
   component: React.ComponentType;
   defaultSize?: { width?: number; height?: number };

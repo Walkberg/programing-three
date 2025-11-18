@@ -1,43 +1,33 @@
+import type { Editor } from "../editor";
 import type {
-  Command,
-  CommandHandler,
   IPlugin,
-  PanelDefinition,
   PluginInfo,
   PluginListener,
   PluginManagerOptions,
-  ToolbarAction,
 } from "./plugin.type";
-import { KeybindingAPI } from "./keybinding-api";
 
 export class PluginManager {
   private plugins: Map<string, IPlugin> = new Map();
-  private commands: Map<string, Command> = new Map();
-  private toolbarActions: ToolbarAction[] = [];
-  private panels: Map<string, PanelDefinition> = new Map();
   private listeners: Set<PluginListener> = new Set();
   private options: PluginManagerOptions;
-  public keybinding: KeybindingAPI;
+  private editor: Editor;
 
-  constructor(options: PluginManagerOptions = {}) {
+  constructor(editor: Editor, options: PluginManagerOptions = {}) {
+    this.editor = editor;
     this.options = {
       autoCleanup: true,
       enableLogging: false,
       ...options,
     };
-
-    // Wire up the keybinding namespace to a dedicated helper class so the
-    // implementation is not inline on the manager itself.
-    this.keybinding = new KeybindingAPI(this);
   }
 
   /**
    * Enregistrer un plugin
    */
   public registerPlugin<T extends IPlugin>(
-    PluginClass: new (manager: PluginManager) => T
+    PluginClass: new (editor: Editor) => T
   ): string {
-    const plugin = new PluginClass(this);
+    const plugin = new PluginClass(this.editor);
     const pluginId = plugin.id;
 
     if (this.plugins.has(pluginId)) {
@@ -48,7 +38,7 @@ export class PluginManager {
     this.plugins.set(pluginId, plugin);
 
     // Appeler la méthode register du plugin
-    plugin.register();
+    plugin.register(this.editor);
 
     this.log("info", `Plugin ${pluginId} enregistré avec succès`);
     this.notifyListeners();
@@ -70,152 +60,10 @@ export class PluginManager {
       plugin.unregister();
     }
 
-    if (this.options.autoCleanup) {
-      this.cleanupPluginResources(pluginId);
-    }
-
     this.plugins.delete(pluginId);
     this.log("info", `Plugin ${pluginId} désenregistré`);
     this.notifyListeners();
     return true;
-  }
-
-  /**
-   * Nettoyer toutes les ressources d'un plugin
-   */
-  private cleanupPluginResources(pluginId: string): void {
-    // Nettoyer les commandes
-    for (const [cmdId, cmd] of this.commands.entries()) {
-      if (cmd.pluginId === pluginId) {
-        this.commands.delete(cmdId);
-      }
-    }
-
-    // Nettoyer les actions toolbar
-    this.toolbarActions = this.toolbarActions.filter(
-      (a) => a.pluginId !== pluginId
-    );
-
-    // Nettoyer les panels
-    for (const [panelId, panel] of this.panels.entries()) {
-      if (panel.pluginId === pluginId) {
-        this.panels.delete(panelId);
-      }
-    }
-  }
-
-  /**
-   * Enregistrer une commande
-   */
-  public registerCommand(
-    commandId: string,
-    handler: CommandHandler,
-    pluginId: string
-  ): void {
-    if (this.commands.has(commandId)) {
-      this.log(
-        "warn",
-        `Commande ${commandId} déjà enregistrée, elle sera écrasée`
-      );
-    }
-    this.commands.set(commandId, { handler, pluginId });
-    this.notifyListeners();
-  }
-
-  /**
-   * Exécuter une commande
-   *
-   * Note: `executeCommand` is the canonical API for plugins to invoke editor
-   * behavior. Keybinding plugins should map keys to existing command IDs and
-   * call `executeCommand(commandId, ...args)` rather than mutating internal
-   * stores directly. This keeps the PluginManager surface minimal and stable.
-   */
-  public executeCommand<T = any>(
-    commandId: string,
-    ...args: any[]
-  ): T | undefined | Promise<T | undefined> {
-    const command = this.commands.get(commandId);
-    if (!command) {
-      this.log("warn", `Commande ${commandId} introuvable`);
-      return undefined;
-    }
-
-    try {
-      return command.handler(...args) as T;
-    } catch (error) {
-      this.log("error", `Erreur lors de l'exécution de ${commandId}:`, error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Vérifier si une commande existe
-   */
-  public hasCommand(commandId: string): boolean {
-    return this.commands.has(commandId);
-  }
-
-  /**
-   * Obtenir toutes les commandes
-   */
-  public getCommands(): Map<string, Command> {
-    return new Map(this.commands);
-  }
-
-  /**
-   * Enregistrer une action toolbar
-   */
-  public registerToolbarAction(
-    action: Omit<ToolbarAction, "pluginId">,
-    pluginId: string
-  ): void {
-    this.toolbarActions.push({ ...action, pluginId });
-    this.notifyListeners();
-  }
-
-  /**
-   * Obtenir toutes les actions toolbar
-   */
-  public getToolbarActions(): ToolbarAction[] {
-    return [...this.toolbarActions];
-  }
-
-  /**
-   * Enregistrer un panel
-   */
-  public registerPanel(
-    panelId: string,
-    panelConfig: Omit<PanelDefinition, "pluginId">,
-    pluginId: string
-  ): void {
-    if (this.panels.has(panelId)) {
-      this.log("warn", `Panel ${panelId} déjà enregistré, il sera écrasé`);
-    }
-    this.panels.set(panelId, { ...panelConfig, pluginId });
-    this.notifyListeners();
-  }
-
-  /**
-   * Obtenir tous les panels
-   */
-  public getPanels(): Array<PanelDefinition & { id: string }> {
-    return Array.from(this.panels.entries()).map(([id, config]) => ({
-      ...config,
-    }));
-  }
-
-  /**
-   * Obtenir un panel spécifique
-   */
-  public getPanel(panelId: string): PanelDefinition | undefined {
-    return this.panels.get(panelId);
-  }
-
-  /**
-   * Vérifier si un panel existe
-   */
-  public hasPanel(panelId: string): boolean {
-    return this.panels.has(panelId);
   }
 
   /**
@@ -271,35 +119,6 @@ export class PluginManager {
   }
 
   /**
-   * Register a runtime shortcut mapping with the Keybinding plugin.
-   * Returns an unregister function when successful, otherwise undefined.
-   */
-  public registerShortcut(
-    key: string,
-    commandId: string,
-    args?: any[]
-  ): (() => void) | undefined {
-    const kb = this.plugins.get("plugin.keybinding") as any;
-    if (kb && typeof kb.registerShortcut === "function") {
-      return kb.registerShortcut(key, commandId, args);
-    }
-    this.log("warn", "Keybinding plugin not available to register shortcut");
-    return undefined;
-  }
-
-  /**
-   * Unregister a runtime shortcut mapping previously registered.
-   */
-  public unregisterShortcut(key: string): void {
-    const kb = this.plugins.get("plugin.keybinding") as any;
-    if (kb && typeof kb.unregisterShortcut === "function") {
-      kb.unregisterShortcut(key);
-      return;
-    }
-    this.log("warn", "Keybinding plugin not available to unregister shortcut");
-  }
-
-  /**
    * Logging interne
    */
   private log(level: "info" | "warn" | "error", ...args: any[]): void {
@@ -318,22 +137,8 @@ export class PluginManager {
 
     // Nettoyer toutes les ressources
     this.plugins.clear();
-    this.commands.clear();
-    this.toolbarActions = [];
-    this.panels.clear();
     this.listeners.clear();
 
     this.log("info", "PluginManager réinitialisé");
   }
-}
-
-export const singletonPluginManager = new PluginManager({
-  autoCleanup: true,
-  enableLogging: false,
-});
-
-export function registerPlugin<T extends IPlugin>(
-  PluginClass: new (manager: PluginManager) => T
-): string {
-  return singletonPluginManager.registerPlugin(PluginClass);
 }

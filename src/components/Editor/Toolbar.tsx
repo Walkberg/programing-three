@@ -45,7 +45,7 @@ import {
   DropdownMenuItem as GizmoItem,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { usePluginManager } from "@/features/plugin/PlugginProvider";
+import { useEditor } from "@/features/plugin/PlugginProvider";
 import { useToolbarActions } from "@/features/plugin/pluggin-hook";
 import type { ToolbarAction } from "@/editor/plugin/plugin.type";
 import { PRESET_CONFIGS } from "@/state/presetConfig";
@@ -103,7 +103,7 @@ export function Toolbar() {
     }
   };
 
-  const pluginManager = usePluginManager();
+  const pluginManager = useEditor();
 
   const handleSave = () => {
     try {
@@ -536,10 +536,10 @@ export function Toolbar() {
 }
 
 export const PluginToolbar = () => {
-  const tss = usePluginManager();
+  const tss = useEditor();
   useToolbarActions();
 
-  const plugins = tss.getPlugins();
+  const plugins = tss.plugins.getPlugins();
 
   return (
     <Popover>
@@ -587,7 +587,7 @@ export const ActionToolBarCategory = ({
   const toolbarActions = useToolbarActions();
   const actions = getToolBarAction(toolbarActions);
 
-  const pluginManager = usePluginManager();
+  const pluginManager = useEditor();
 
   const handleClickAction = async (toolbarAction: ToolbarAction) => {
     await pluginManager.executeCommand(toolbarAction.action);

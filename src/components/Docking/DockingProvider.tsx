@@ -1,4 +1,4 @@
-import { usePluginManager } from "@/features/plugin/PlugginProvider";
+import { useEditor } from "@/features/plugin/PlugginProvider";
 import { useLayoutStore } from "@/state/layoutStore";
 import { useEffect } from "react";
 
@@ -8,16 +8,12 @@ export const DockingProvider = ({
   children: React.ReactNode;
 }) => {
   const { addDockerPanel } = useLayoutStore();
-  const manager = usePluginManager();
+  const editor = useEditor();
 
   useEffect(() => {
-    manager.registerCommand(
-      "docking.add-panel",
-      (panel: string) => {
-        addDockerPanel(panel);
-      },
-      "docking-provider"
-    );
+    editor.registerSimpleCommand("docking.add-panel", (panel: string) => {
+      addDockerPanel(panel);
+    });
   }, []);
 
   return <div>{children}</div>;

@@ -1,24 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { usePluginManager } from "@/features/plugin/PlugginProvider";
+import { useEditor } from "@/features/plugin/PlugginProvider";
 import { usePluginStateStore } from "@/plugins/plugin-editor/pluginStateStore";
 
 import { useEffect, useState } from "react";
 
 export const PluginEditorPanel: React.FC = () => {
-  const pluginManager = usePluginManager();
+  const editor = useEditor();
   const { isPluginEnabled, togglePlugin } = usePluginStateStore();
   const [open, setOpen] = useState(false);
 
-  const plugins = pluginManager.getPlugins();
+  const plugins = editor.plugins.getPlugins();
 
   const handleRegisterPlugin = (pluginId: string) => {
-    pluginManager.executeCommand<string>("register-plugin", pluginId);
+    editor.executeCommand("register-plugin", pluginId);
   };
 
   const handleUnregisterPlugin = (pluginId: string) => {
-    pluginManager.executeCommand<string>("unregister-plugin", pluginId);
+    editor.executeCommand("unregister-plugin", pluginId);
   };
 
   const handleTogglePlugin = (pluginId: string) => {
@@ -31,13 +31,9 @@ export const PluginEditorPanel: React.FC = () => {
   };
 
   useEffect(() => {
-    pluginManager.registerCommand(
-      "docking.add-panel",
-      () => {
-        setOpen(true);
-      },
-      "plugin-editor"
-    );
+    editor.registerSimpleCommand("docking.add-panel", () => {
+      setOpen(true);
+    });
   }, []);
 
   return (

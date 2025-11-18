@@ -1,7 +1,6 @@
 import { BasePlugin } from "@/editor/plugin/base-plugin";
 import { Edit2Icon } from "lucide-react";
 import { PluginEditorPanel } from "./PluginEditorPanel";
-import { registerPlugin } from "@/editor/plugin/plugin-manager";
 
 export class PluginEditor extends BasePlugin {
   public id = "plugin-editor-plugin";
@@ -21,8 +20,8 @@ export class PluginEditor extends BasePlugin {
     });
 
     this.registerCommand("unregister-plugin", (pluginId: string) => {
-      if (this.manager.hasPlugin(pluginId)) {
-        this.manager.unregisterPlugin(pluginId);
+      if (this.editor.hasPlugin(pluginId)) {
+        this.editor.plugins.unregisterPlugin(pluginId);
       }
     });
 
@@ -33,5 +32,3 @@ export class PluginEditor extends BasePlugin {
     console.log("Désactivation du plugin Code Panel");
   }
 }
-
-registerPlugin(PluginEditor);

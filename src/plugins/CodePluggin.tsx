@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
+import type { Editor } from "@/editor/editor";
 import { BasePlugin } from "@/editor/plugin/base-plugin";
-import { usePluginManager } from "@/features/plugin/PlugginProvider";
+import { useEditor } from "@/features/plugin/PlugginProvider";
 import { House } from "lucide-react";
 
 export class CodePanelPlugin extends BasePlugin {
@@ -10,16 +11,17 @@ export class CodePanelPlugin extends BasePlugin {
     "Ajoute un panneau de code et une commande pour l'ouvrir";
   public version = "1.0.0";
 
-  register(): void {
-    this.registerCommand("open-code-panel", () => {
+  register(editor: Editor): void {
+    editor.registerSimpleCommand("open-code-panel", () => {
       console.log("Ouverture du panneau de code depuis le plugin");
-      this.executeCommand("docking.add-panel", {
+      editor.executeCommand("docking.add-panel", {
         id: "code",
         title: "Code",
       });
     });
 
-    this.registerToolbarAction({
+    editor.registerToolbarAction({
+      id: "open-code-panel",
       type: "button",
       label: "Code",
       icon: "Code",
@@ -27,7 +29,7 @@ export class CodePanelPlugin extends BasePlugin {
       tooltip: "Ouvrir l'éditeur de code",
     });
 
-    this.registerPanel("boujour", {
+    editor.registerPanel("boujour", {
       id: "boujour",
       title: "Bonjour",
       icon: House,
@@ -43,10 +45,10 @@ export class CodePanelPlugin extends BasePlugin {
 }
 
 const CodePanelComponent: React.FC = () => {
-  const pluginManager = usePluginManager();
+  const editor = useEditor();
 
   const handleAddPannel = () => {
-    pluginManager.executeCommand("docking.add-panel", "code");
+    editor.executeCommand("docking.add-panel", "code");
   };
 
   return (

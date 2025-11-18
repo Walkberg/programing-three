@@ -3,9 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
-import { registerPlugin } from "@/editor/plugin/plugin-manager.ts";
 import { KeybindingPlugin } from "@/plugins/keybinding";
 import { ViewportGizmoPlugin } from "@/plugins/viewport-gizmo/viewport-gizmo.plugin";
+import { editor } from "./editor/editor.ts";
 
 // WebGL 2.0 feature detection (T077)
 function checkWebGLSupport(): boolean {
@@ -75,8 +75,8 @@ if (!checkWebGLSupport()) {
   // hooks are active during initial render (Keybinding plugin provides
   // global keyboard behavior mapped to editor commands).
   try {
-    registerPlugin(KeybindingPlugin);
-    registerPlugin(ViewportGizmoPlugin);
+    editor.registerPlugin(KeybindingPlugin);
+    editor.registerPlugin(ViewportGizmoPlugin);
   } catch (err) {
     // Do not block application startup on plugin registration failure
     console.warn("Plugin registration failed:", err);

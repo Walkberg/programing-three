@@ -1,4 +1,4 @@
-import { PluginManager } from "@/editor/plugin/plugin-manager";
+import { Editor } from "@/editor/editor";
 import {
   createContext,
   useContext,
@@ -7,44 +7,42 @@ import {
   type ReactNode,
 } from "react";
 
-interface PluginContextValue {
-  manager: PluginManager;
+interface EditorContextValue {
+  editor: Editor;
 }
 
-const PluginContext = createContext<PluginContextValue | null>(null);
+const EditorContext = createContext<EditorContextValue | null>(null);
 
-export interface PluginProviderProps {
+export interface EditorProviderProps {
   children: ReactNode;
-  manager?: PluginManager;
+  editor?: Editor;
 }
 
-export const PluginProvider: React.FC<PluginProviderProps> = ({
+export const EditorProvider: React.FC<EditorProviderProps> = ({
   children,
-  manager: externalManager,
+  editor: externalEditor,
 }) => {
-  const [manager] = useState(
-    () => externalManager || new PluginManager({ enableLogging: true })
-  );
+  const [editor] = useState(() => externalEditor || new Editor());
   const [, forceUpdate] = useState({});
 
   useEffect(() => {
-    const unsubscribe = manager.subscribe(() => {
+    const unsubscribe = editor.plugins.subscribe(() => {
       forceUpdate({});
     });
     return unsubscribe;
-  }, [manager]);
+  }, [editor]);
 
   return (
-    <PluginContext.Provider value={{ manager }}>
+    <EditorContext.Provider value={{ editor }}>
       {children}
-    </PluginContext.Provider>
+    </EditorContext.Provider>
   );
 };
 
-export const usePluginManager = (): PluginManager => {
-  const context = useContext(PluginContext);
+export const useEditor = (): Editor => {
+  const context = useContext(EditorContext);
   if (!context) {
-    throw new Error("usePluginManager doit être utilisé dans PluginProvider");
+    throw new Error("useEditor doit être utilisé dans EditorProvider");
   }
-  return context.manager;
+  return context.editor;
 };

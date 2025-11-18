@@ -1,3 +1,5 @@
+import type { Editor } from "@/editor/editor";
+import type { Shortcut } from "@/editor/keybinging-manager";
 import { BasePlugin } from "@/editor/plugin/base-plugin";
 import type { PluginManager } from "@/editor/plugin/plugin-manager";
 import { useEditorStore } from "@/state/editorStore";
@@ -8,7 +10,7 @@ const VIEWPORT_SCALE = "viewport.scale";
 const VIEWPORT_TOGGLE_SPACE = "viewport.toggleSpace";
 const VIEWPORT_OFF = "viewport.off";
 
-const shortcuts = [
+const shortcuts: Shortcut[] = [
   { key: "t", command: VIEWPORT_TRANSLATE },
   { key: "r", command: VIEWPORT_ROTATE },
   { key: "s", command: VIEWPORT_SCALE },
@@ -21,8 +23,8 @@ export class ViewportGizmoPlugin extends BasePlugin {
   public name = "Viewport Gizmo Plugin";
   public version = "0.1.0";
 
-  constructor(manager: PluginManager) {
-    super(manager);
+  constructor(editor: Editor) {
+    super(editor);
     this.manifest = {
       id: this.id,
       name: this.name,
@@ -31,7 +33,7 @@ export class ViewportGizmoPlugin extends BasePlugin {
     };
   }
 
-  register(): void {
+  register(editor: Editor): void {
     // Commands that mutate editor gizmo state. This plugin owns these
     // mutations so keybinding plugin can remain capability-restricted.
     this.registerCommand(VIEWPORT_TRANSLATE, () => {
@@ -66,7 +68,7 @@ export class ViewportGizmoPlugin extends BasePlugin {
       if (setGizmoMode) setGizmoMode(mode as any);
     });
 
-    this.manager.keybinding.registerShortcuts(shortcuts);
+    this.editor.keybindings.registerKeybindings(shortcuts);
   }
 }
 

@@ -1,5 +1,4 @@
 import { Editor } from "../editor";
-import type { PluginManager } from "./plugin-manager";
 import type {
   CommandHandler,
   IPlugin,
@@ -15,13 +14,11 @@ export abstract class BasePlugin implements IPlugin {
   public version?: string;
   /** Optional manifest describing requested capabilities */
   public manifest?: PluginManifest;
-  public manager: PluginManager;
 
   public editor: Editor;
 
-  constructor(manager: PluginManager) {
-    this.manager = manager;
-    this.editor = new Editor();
+  constructor(editor: Editor) {
+    this.editor = editor;
   }
 
   /**
@@ -32,7 +29,7 @@ export abstract class BasePlugin implements IPlugin {
     return this.manifest?.requestedCapabilities || [];
   }
 
-  abstract register(): void;
+  abstract register(editor: Editor): void;
 
   unregister?(): void;
 
@@ -40,26 +37,19 @@ export abstract class BasePlugin implements IPlugin {
    * Helpers pour faciliter l'enregistrement
    */
   protected registerCommand(commandId: string, handler: CommandHandler): void {
-    this.manager.registerCommand(commandId, handler, this.id);
+    this.editor.registerCommand(commandId, handler);
   }
 
   protected registerToolbarAction(
     action: Omit<ToolbarAction, "pluginId">
   ): void {
-    this.manager.registerToolbarAction(action, this.id);
+    this.editor.registerToolbarAction(action);
   }
 
   protected registerPanel(
     panelId: string,
     config: Omit<PanelDefinition, "pluginId">
   ): void {
-    this.manager.registerPanel(panelId, config, this.id);
-  }
-
-  protected executeCommand<T = any>(
-    commandId: string,
-    ...args: any[]
-  ): T | undefined {
-    return this.manager.executeCommand<T>(commandId, ...args);
+    this.editor.registerPanel(panelId, config);
   }
 }

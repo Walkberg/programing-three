@@ -14,6 +14,7 @@ import {
   Layers,
   Terminal,
 } from "lucide-react";
+import type { Editor } from "@/editor/editor";
 
 const ADD_PANEL_COMMAND_ID = "docking.add-panel";
 
@@ -24,8 +25,8 @@ export class DockingPanelPlugin extends BasePlugin {
     "Ajoute un panneau de docking et une commande pour l'ouvrir";
   public version = "1.0.0";
 
-  register(): void {
-    this.registerPanel("hierarchy", {
+  register(editor: Editor): void {
+    editor.registerPanel("hierarchy", {
       id: "hierarchy",
       title: "Hierarchy",
       icon: Layers,
@@ -34,7 +35,7 @@ export class DockingPanelPlugin extends BasePlugin {
       description: "Scene object hierarchy tree",
     });
 
-    this.registerPanel("scene", {
+    editor.registerPanel("scene", {
       id: "scene",
       title: "Scene",
       icon: Box,
@@ -42,7 +43,7 @@ export class DockingPanelPlugin extends BasePlugin {
       description: "3D scene viewport for editing",
     });
 
-    this.registerPanel("game", {
+    editor.registerPanel("game", {
       id: "game",
       title: "Game",
       icon: Gamepad2,
@@ -50,7 +51,7 @@ export class DockingPanelPlugin extends BasePlugin {
       description: "Game preview viewport",
     });
 
-    this.registerPanel("code", {
+    editor.registerPanel("code", {
       id: "code",
       title: "Code",
       icon: Code,
@@ -58,7 +59,7 @@ export class DockingPanelPlugin extends BasePlugin {
       description: "Code editor for scripts",
     });
 
-    this.registerPanel("inspector", {
+    editor.registerPanel("inspector", {
       id: "inspector",
       title: "Inspector",
       icon: FileText,
@@ -66,7 +67,7 @@ export class DockingPanelPlugin extends BasePlugin {
       defaultSize: { width: 300 },
       description: "Component properties editor",
     });
-    this.registerPanel("console", {
+    editor.registerPanel("console", {
       id: "console",
       title: "Console",
       icon: Terminal,
@@ -74,7 +75,7 @@ export class DockingPanelPlugin extends BasePlugin {
       defaultSize: { height: 200 },
       description: "Log messages and errors",
     });
-    this.registerPanel("assets", {
+    editor.registerPanel("assets", {
       id: "assets",
       title: "Assets",
       icon: Folder,
@@ -83,7 +84,7 @@ export class DockingPanelPlugin extends BasePlugin {
       description: "Project asset browser",
     });
 
-    this.registerCommand(ADD_PANEL_COMMAND_ID, () => {
+    editor.registerSimpleCommand(ADD_PANEL_COMMAND_ID, () => {
       console.log("Ajout d'un panneau ");
     });
 

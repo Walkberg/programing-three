@@ -2,21 +2,19 @@ import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import "./App.css";
-import { PluginProvider } from "./features/plugin/PlugginProvider";
-import {
-  registerPlugin,
-  singletonPluginManager,
-} from "./editor/plugin/plugin-manager";
+import { EditorProvider } from "./features/plugin/PlugginProvider";
+
 import { CodePanelPlugin } from "./plugins/CodePluggin";
 import { LayersPanelPlugin } from "./plugins/LayerManagerPlugin";
 import { DockingPanelPlugin } from "./plugins/docking/docking.plugin";
 import { PluginEditor } from "./plugins/plugin-editor/pluggin-editor.plugin";
 import { DockingProvider } from "./components/Docking/DockingProvider";
+import { editor } from "./editor/editor";
 
-registerPlugin(CodePanelPlugin);
-registerPlugin(LayersPanelPlugin);
-registerPlugin(DockingPanelPlugin);
-registerPlugin(PluginEditor);
+editor.registerPlugin(CodePanelPlugin);
+editor.registerPlugin(LayersPanelPlugin);
+editor.registerPlugin(DockingPanelPlugin);
+editor.registerPlugin(PluginEditor);
 
 const EditorLayout = lazy(() =>
   import("@/components/Editor/EditorLayout").then((module) => ({
@@ -28,11 +26,11 @@ function App() {
   return (
     <>
       <Suspense fallback={<LoadingSpinner />}>
-        <PluginProvider manager={singletonPluginManager}>
+        <EditorProvider editor={editor}>
           <DockingProvider>
             <EditorLayout />
           </DockingProvider>
-        </PluginProvider>
+        </EditorProvider>
       </Suspense>
       <Toaster />
     </>
