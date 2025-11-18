@@ -1,73 +1,59 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+    # programing-three
 
-Currently, two official plugins are available:
+    Un éditeur de scènes 3D léger construit avec React + TypeScript + Three.js (via React Three Fiber).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+    But du projet
+    - Prototyper un éditeur de scènes (GameObject hierarchy, inspector, viewport, gizmos).
+    - Fournir une architecture de plugins (commands, keybindings, toolbar actions) et un système de docking de panneaux.
 
-## React Compiler
+    Principales fonctionnalités
+    - Hiérarchie des GameObjects avec glisser-déposer et renommage
+    - Viewport 3D avec gizmos de transformation (translate/rotate/scale)
+    - Système de plugins (PluginManager) pour étendre commandes et actions
+    - Keybinding plugin pour enregistrer des raccourcis (API objet : `{ key, command }`)
+    - Système de layout docking avec sauvegarde automatique
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+    Stack technique
+    - TypeScript + React 18
+    - Vite 5 pour le dev/build
+    - Three.js (React Three Fiber) pour le viewport
+    - Zustand pour la gestion d'état
+    - Tailwind CSS pour le style
+    - Vitest pour les tests
 
-## Expanding the ESLint configuration
+    Structure du dépôt (sélection)
+    - `src/` : code source principal
+      - `core/` : objets de base (Scene, GameObject, Component)
+      - `plugins/` : plugins (keybinding, viewport-gizmo, etc.)
+      - `components/` : UI (Hierarchy, Inspector, Viewport, Docking)
+      - `state/` : Zustand stores
+      - `specs/` : spécifications et plans de features
+    - `tests/` : suite de tests unitaires/intégration
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+    Développement
+    1. Installer les dépendances
+    ```powershell
+    npm install
+    ```
+    2. Lancer le serveur de développement
+    ```powershell
+    npm run dev
+    ```
+    3. Lancer les tests
+    ```powershell
+    npm test
+    ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+    Notes importantes
+    - L'éditeur expose un `PluginManager` singleton : les plugins enregistrent des commandes via `registerCommand` et exposent des raccourcis via l'API keybinding (`manager.keybinding.registerShortcut({ key, command })`).
+    - Le code contient des specs pour la feature `001-scene-editor-mvp` dans `specs/001-scene-editor-mvp/` (plan.md, spec.md, research.md...).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+    Contribuer
+    - Ouvrez une PR ciblant la branche `001-scene-editor-mvp` et ajoutez des tests pour toute modification comportementale.
+    - Pour les changements d'API publiques (plugins, stores), documentez la migration dans `specs/`.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+    Contact / Licence
+    - Projet prototype — voir le fichier `LICENSE` si présent.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+    Merci et amusez-vous à construire des scènes 3D !
